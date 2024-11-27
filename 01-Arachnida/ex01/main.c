@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+static void print_usage() {
+    fprintf(stderr, "Usage ./spider -r [-l level][-p path] URL\n");
+    exit(1);
+}
+
 int main(int argc, char** argv) {
 
     int opt;
@@ -18,29 +23,42 @@ int main(int argc, char** argv) {
                 recursive = 1;
                 break;
             case 'l':
-                if (optarg && isdigit(optarg)) {
+                if (optarg && isdigit(optarg[0])) {
                     level = atoi(optarg);
                 } else {
                     fprintf(stderr, "Error: -l Level Depth should be a numeric value.\n");
-                    return 1;
+                    print_usage();
                 }
                 break;
             case 'p':
                 path = optarg;
                 break;
             default:
-                fprintf(stderr, "Usage ./spider -r [-l level][-p path] URL");
-                return 1;
+                print_usage();
         }
     }
 
     if (!recursive) {
-        fprintf(stderr, "Usage ./spider -r [-l level][-p path] URL");
-        return 1;
+        print_usage();
     }
     if (optind < argc) { 
-        url = argv[optind];
+        url = argv[optind++]; // take value then increment
+        printf("URL: %s\n", url);
+    } else {
+        fprintf(stderr, "Please provide a URL.\n");
     }
+
+    if (optind < argc) {
+        print_usage();
+    }
+
+    if (level > 0) {
+        printf("level: %d\n", level);
+    }
+    if (path) {
+        printf("path: %s\n", path);
+    }
+
 
 
 
