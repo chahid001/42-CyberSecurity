@@ -1,7 +1,4 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
+#include "spider.h"
 
 static void print_usage() {
     fprintf(stderr, "Usage ./spider -r [-l level][-p path] URL\n");
@@ -59,5 +56,6 @@ int main(int argc, char** argv) {
         printf("path: %s\n", path);
     }
 
+    get_ipv4(url);
 
 }
