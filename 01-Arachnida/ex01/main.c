@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
         printf("path: %s\n", path);
     }
 
-    get_ipv4(url);
+    int f = create_socket(get_ipv4(url));
+    printf("socket fd: %d", f);
 
 }
