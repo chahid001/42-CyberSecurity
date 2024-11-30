@@ -58,5 +58,5 @@ int main(int argc, char** argv) {
 
     int f = create_socket(get_ipv4(url));
     printf("socket fd: %d", f);
-
+    ft_http(f, url);
 }

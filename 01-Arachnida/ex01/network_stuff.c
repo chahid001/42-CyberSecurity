@@ -48,7 +48,7 @@ int    create_socket(const char* ipv4) {
     }
 
     target.sin_family = AF_INET;
-    target.sin_port = htons(80);
+    target.sin_port = htons(443);
     target.sin_addr.s_addr = inet_addr(ipv4);
 
 
@@ -61,3 +61,58 @@ int    create_socket(const char* ipv4) {
     return sock_fd;
 }
 
+int ft_http(int fd, char *domain) {
+
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+
+    SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+    
+    if (!ctx) {
+        fprintf(stderr, "Eroor");
+        close(fd);
+        return -1;
+    }
+
+    SSL *ssl = SSL_new(ctx);
+    SSL_set_fd(ssl, fd);
+
+    if (SSL_connect(ssl) <= 0) {
+        SSL_free(ssl);
+        SSL_CTX_free(ctx);
+        close(fd);
+        return -1;
+    }
+
+
+    char request[1024];
+
+    snprintf(request, sizeof(request), 
+        "GET /community/tutorials/how-to-view-the-source-code-of-an-html-document HTTP/1.1\r\n"
+        "Host: %s\r\n"
+        "Connection: close\r\n"
+        "\r\n", domain);
+
+    SSL_write(ssl, request, strlen(request));
+
+    char buffer[4096];
+    int bytes_received;
+    int i = 0;
+    while ((bytes_received = SSL_read(ssl, buffer, sizeof(buffer) - 1)) > 0) {
+        buffer[bytes_received] = '\0';  // Null-terminate the buffer
+        // while (buffer[i] == "")
+        printf("%s", buffer);  // Print the HTML response (just to check)
+    }
+
+    if (bytes_received == -1) {
+        perror("recv");
+        return -1;
+    }
+
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
+    SSL_CTX_free(ctx);
+    close(fd);
+    return 0;  // Success
+}
