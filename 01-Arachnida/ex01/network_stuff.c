@@ -62,7 +62,7 @@ int    create_socket(char* ipv4) {
     return sock_fd;
 }
 
-int ft_http(int fd, char *domain) {
+char* ft_http(int fd, char *domain) {
 
     SSL_library_init();
     SSL_load_error_strings();
@@ -90,7 +90,7 @@ int ft_http(int fd, char *domain) {
     char request[1024];
 
     snprintf(request, sizeof(request), 
-        "GET /community/tutorials/how-to-view-the-source-code-of-an-html-document HTTP/1.1\r\n"
+        "GET / HTTP/1.1\r\n"
         "Host: %s\r\n"
         "Connection: close\r\n"
         "\r\n", domain);
@@ -126,12 +126,12 @@ int ft_http(int fd, char *domain) {
         perror("recv");
         return -1;
     }
-    printf("%s", html_source);
+    // printf("%s", html_source);
 
     SSL_shutdown(ssl);
     SSL_free(ssl);
     SSL_CTX_free(ctx);
     close(fd);
-    free(html_source);
-    return 0;  // Success
+    // free(html_source);
+    return html_source;
 }

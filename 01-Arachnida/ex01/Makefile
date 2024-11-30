@@ -2,7 +2,7 @@ NAME = spider
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 CC = gcc
-CFLAGS = -I /usr/local/include -L/usr/local/lib -lssl -lcrypto
+CFLAGS = -g -I /usr/local/include -L/usr/local/lib -lssl -lcrypto
 
 
 all: $(NAME)

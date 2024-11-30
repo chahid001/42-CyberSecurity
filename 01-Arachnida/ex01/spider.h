@@ -11,8 +11,10 @@
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 
+# define CHUNK_SIZE 4096
 
 char        *get_ipv4(const char *domain_name);
 int         create_socket(char* ipv4);
-int         ft_http(int fd, char *domain);
+char*         ft_http(int fd, char *domain);
+void    parse_html(const char *html_source);
 #endif
