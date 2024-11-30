@@ -13,6 +13,6 @@
 
 
 char        *get_ipv4(const char *domain_name);
-int         create_socket(const char* ipv4);
+int         create_socket(char* ipv4);
 int         ft_http(int fd, char *domain);
 #endif

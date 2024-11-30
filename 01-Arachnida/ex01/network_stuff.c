@@ -36,7 +36,7 @@ char *get_ipv4(const char *domain_name) {
 
 }
 
-int    create_socket(const char* ipv4) {
+int    create_socket(char* ipv4) {
     int sock_fd;
     struct sockaddr_in target;
 
@@ -57,6 +57,7 @@ int    create_socket(const char* ipv4) {
         close(sock_fd);
         return -1;
     }
+    free(ipv4);
 
     return sock_fd;
 }
@@ -96,23 +97,41 @@ int ft_http(int fd, char *domain) {
 
     SSL_write(ssl, request, strlen(request));
 
+    
+    size_t total_size = 0;
+    size_t chunck_size = 4096;
+    char *html_source = malloc(chunck_size * sizeof(char));
+
+    if (!html_source) {
+        return -1;
+    }
+
     char buffer[4096];
     int bytes_received;
     int i = 0;
     while ((bytes_received = SSL_read(ssl, buffer, sizeof(buffer) - 1)) > 0) {
-        buffer[bytes_received] = '\0';  // Null-terminate the buffer
-        // while (buffer[i] == "")
-        printf("%s", buffer);  // Print the HTML response (just to check)
+        buffer[bytes_received] = '\0';  
+        char *new_html = realloc(html_source, total_size + bytes_received);
+        if (!new_html) {
+            free(html_source);
+            return -1;
+        }
+        html_source = new_html;
+        memcpy(html_source + total_size, buffer, bytes_received);
+        total_size += bytes_received;
+        html_source[total_size] = '\0'; 
     }
 
     if (bytes_received == -1) {
         perror("recv");
         return -1;
     }
+    printf("%s", html_source);
 
     SSL_shutdown(ssl);
     SSL_free(ssl);
     SSL_CTX_free(ctx);
     close(fd);
+    free(html_source);
     return 0;  // Success
 }
