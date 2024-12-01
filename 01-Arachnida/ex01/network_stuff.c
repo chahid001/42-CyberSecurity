@@ -77,6 +77,7 @@ char* ft_http(int fd, char *domain) {
     }
 
     SSL *ssl = SSL_new(ctx);
+    SSL_set_tlsext_host_name(ssl, domain);
     SSL_set_fd(ssl, fd);
 
     if (SSL_connect(ssl) <= 0) {
@@ -91,9 +92,14 @@ char* ft_http(int fd, char *domain) {
 
     snprintf(request, sizeof(request), 
         "GET / HTTP/1.1\r\n"
-        "Host: %s\r\n"
+        "Host: www.stackoverflow.com\r\n"
+        // "Content-Length: 0\r\n"
+        // "Content-Type: application/x-www-form-urlencoded\r\n"
+        // "Accept: */*\r\n"
+        // "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36\r\n"
         "Connection: close\r\n"
-        "\r\n", domain);
+        // "Accept-Encoding: identity\r\n"
+        "\r\n");
 
     SSL_write(ssl, request, strlen(request));
 
@@ -126,7 +132,7 @@ char* ft_http(int fd, char *domain) {
         perror("recv");
         return -1;
     }
-    // printf("%s", html_source);
+    printf("%s", html_source);
 
     SSL_shutdown(ssl);
     SSL_free(ssl);
