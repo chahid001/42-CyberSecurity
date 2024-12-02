@@ -10,11 +10,36 @@
 # include <arpa/inet.h>
 # include <openssl/ssl.h>
 # include <openssl/err.h>
+# include <stdbool.h>
 
 # define CHUNK_SIZE 4096
+# define HTTP_SCHEME "http://"
+# define HTTPS_SCHEME "https://"
+# define HTTP_PORT 80
+# define HTTPS_PORT 443
+
+typedef struct s_url {
+    int     port;
+    char    *host;
+    char    *uri;
+    char    *url;
+} t_url;
+
+
+typedef struct s_opts {
+    int     level;
+    char    *path;
+    t_url   *url;
+} t_opts;
+
+
 
 char        *get_ipv4(const char *domain_name);
 int         create_socket(char* ipv4);
 char*         ft_http(int fd, char *domain);
 void    parse_html(const char *html_source);
+char*    ft_args(int argc, char **argv);
+
+void    parse_url(char *url);
+bool    start_with(char *url, char *reference);
 #endif
