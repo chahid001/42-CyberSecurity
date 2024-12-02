@@ -5,13 +5,15 @@ static void print_usage() {
     exit(1);
 }
 
-char*    ft_args(int argc, char **argv) {
+t_opts   *ft_args(int argc, char **argv) {
+
+    t_opts *opts;
 
     int opt;
     int recursive = 0;
     int level = -1;
 
-    char *path = NULL;
+    char *path = "./data";
     char *url = NULL;
 
     while((opt = getopt(argc, argv, "-rl:p:")) != -1) {
@@ -47,14 +49,20 @@ char*    ft_args(int argc, char **argv) {
         print_usage();
     }
 
+
+    opts = (t_opts*)malloc(sizeof(t_opts));
+
+    //protection
+
+    opts->url = parse_url(url);
+    opts->path = path; // Check the path for later
     if (level > 0) {
-        printf("level: %d\n", level);
-    } 
-    if (path) {
-        printf("path: %s\n", path);
+        opts->level = level;
+    } else {
+        opts->level = 5;
     }
 
-    return url;
+    return opts;
 } 
   
 

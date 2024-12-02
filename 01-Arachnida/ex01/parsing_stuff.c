@@ -15,7 +15,7 @@ bool    start_with(char *url, char *reference) {
     return 1;
 }
 
-void    parse_url(char *url) {
+t_url   *parse_url(char *url) {
 
     t_url *parsed_url;
 
@@ -36,8 +36,6 @@ void    parse_url(char *url) {
         exit(1);
     }
 
-    
-
     // Check & pass URI
     char *pos = strchr(url, '/');
     size_t len_pos = 0;
@@ -57,7 +55,6 @@ void    parse_url(char *url) {
         parsed_url->uri[0] = '/';
         parsed_url->uri[1] = '\0';
     }
-    printf("uri: %s\n", parsed_url->uri);
 
     // Host URL
     len_host = (strlen(url) - len_pos) + 1;
@@ -74,9 +71,14 @@ void    parse_url(char *url) {
         // Copying only the url ( minus 4 of www. and 1 for \0 -> 5)
         snprintf(parsed_url->host, len_host, "www.%.*s", len_host - 5, url);
     }
+    
+    
+    printf("REF_URL: %s\n", parsed_url->url);
     printf("URL: %s\n", parsed_url->host);
+    printf("URI: %s\n", parsed_url->uri);
     printf("PORT: %d\n", parsed_url->port);
 
+    return parsed_url;
 }
 
 void    parse_html(const char *html_source) {

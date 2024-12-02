@@ -33,13 +33,14 @@ typedef struct s_opts {
 } t_opts;
 
 
+t_opts      *ft_args(int argc, char **argv);
+
+t_url       *parse_url(char *url);
 
 char        *get_ipv4(const char *domain_name);
 int         create_socket(char* ipv4);
 char*         ft_http(int fd, char *domain);
 void    parse_html(const char *html_source);
-char*    ft_args(int argc, char **argv);
 
-void    parse_url(char *url);
 bool    start_with(char *url, char *reference);
 #endif
