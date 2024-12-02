@@ -1,42 +1,8 @@
 #include "spider.h"
 
-char *get_ipv4(const char *domain_name) {
-    struct addrinfo hints, *res;
-
-    int status;
-    char *ipv4_str = (char *)malloc(INET_ADDRSTRLEN);
-
-    if (!ipv4_str) {
-        return NULL;
-    }
-
-    memset(&hints, 0, sizeof(hints));
-
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    status = getaddrinfo(domain_name, NULL, &hints, &res);
-
-    if (status != 0) {
-        fprintf(stderr, "Error: %s", gai_strerror(status));
-        return NULL;
-    }
-
-    void *addr;
-    struct sockaddr_in *ipv4 = (struct sockaddr_in*)res->ai_addr;
-    addr = &(ipv4->sin_addr);
-
-    inet_ntop(AF_INET, addr, ipv4_str, INET_ADDRSTRLEN);
-    freeaddrinfo(res);
 
 
-    printf("add: %s\n", ipv4_str);
-
-    return ipv4_str;
-
-}
-
-int    create_socket(char* ipv4) {
+int    create_socket(char* ipv4, int port) {
     int sock_fd;
     struct sockaddr_in target;
 
@@ -62,82 +28,101 @@ int    create_socket(char* ipv4) {
     return sock_fd;
 }
 
-char* ft_http(int fd, char *domain) {
+void    ft_response(SSL *ssl) {
 
-    SSL_library_init();
-    SSL_load_error_strings();
-    OpenSSL_add_all_algorithms();
+    char    buffer[PAGE_SIZE];
+    size_t  total_size = 0;
+    char    *response;
 
-    SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+    response = malloc(PAGE_SIZE * sizeof(char));
+
+    // Protection
+
     
-    if (!ctx) {
+    
+
+}
+void    ft_request(t_url *url) {
+
+    t_socket    *socket;
+    char        request[1024];
+    
+    SSL_init();
+
+
+    socket->fd = create_socket(url->ipv4, url->port); // Creation of socket
+    socket->ctx = SSL_CTX_new(TLS_client_method()); // Init ssl Context -> Client
+
+    if (!socket->ctx) {
         fprintf(stderr, "Eroor");
-        close(fd);
-        return -1;
+        close(socket->fd);
     }
 
-    SSL *ssl = SSL_new(ctx);
-    SSL_set_tlsext_host_name(ssl, domain);
-    SSL_set_fd(ssl, fd);
+    socket->ssl = SSL_new(socket->ctx);
+    SSL_set_tlsext_host_name(socket->ssl, url->host);
+    SSL_set_fd(socket->ssl, socket->fd);
 
-    if (SSL_connect(ssl) <= 0) {
-        SSL_free(ssl);
-        SSL_CTX_free(ctx);
-        close(fd);
-        return -1;
+    if (SSL_connect(socket->ssl) <= 0) {
+        ft_SSL_free(socket->ssl, socket->ctx);
+        close(socket->fd);
+        exit(1);
     }
-
-
-    char request[1024];
 
     snprintf(request, sizeof(request), 
-        "GET / HTTP/1.1\r\n"
-        "Host: www.stackoverflow.com\r\n"
-        // "Content-Length: 0\r\n"
-        // "Content-Type: application/x-www-form-urlencoded\r\n"
-        // "Accept: */*\r\n"
-        // "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36\r\n"
+        "GET %s HTTP/1.1\r\n"
+        "Host: %s\r\n"
+        "Accept: */*\r\n"
+        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36\r\n"
         "Connection: close\r\n"
-        // "Accept-Encoding: identity\r\n"
-        "\r\n");
+        "Accept-Encoding: identity\r\n"
+        "\r\n", url->uri, url->host);
 
-    SSL_write(ssl, request, strlen(request));
+    SSL_write(socket->ssl, request, strlen(request));
+
+}
+
+// char* ft_request(int fd, char *domain) {
+
+
+
+
+//     
 
     
-    size_t total_size = 0;
-    size_t chunck_size = 4096;
-    char *html_source = malloc(chunck_size * sizeof(char));
+//     size_t total_size = 0;
+//     size_t chunck_size = 4096;
+//     char *html_source = malloc(chunck_size * sizeof(char));
 
-    if (!html_source) {
-        return -1;
-    }
+//     if (!html_source) {
+//         return -1;
+//     }
 
-    char buffer[4096];
-    int bytes_received;
-    int i = 0;
-    while ((bytes_received = SSL_read(ssl, buffer, sizeof(buffer) - 1)) > 0) {
-        buffer[bytes_received] = '\0';  
-        char *new_html = realloc(html_source, total_size + bytes_received);
-        if (!new_html) {
-            free(html_source);
-            return -1;
-        }
-        html_source = new_html;
-        memcpy(html_source + total_size, buffer, bytes_received);
-        total_size += bytes_received;
-        html_source[total_size] = '\0'; 
-    }
+//     char buffer[4096];
+//     int bytes_received;
+//     int i = 0;
+//     while ((bytes_received = SSL_read(ssl, buffer, sizeof(buffer) - 1)) > 0) {
+//         buffer[bytes_received] = '\0';  
+//         char *new_html = realloc(html_source, total_size + bytes_received);
+//         if (!new_html) {
+//             free(html_source);
+//             return -1;
+//         }
+//         html_source = new_html;
+//         memcpy(html_source + total_size, buffer, bytes_received);
+//         total_size += bytes_received;
+//         html_source[total_size] = '\0'; 
+//     }
 
-    if (bytes_received == -1) {
-        perror("recv");
-        return -1;
-    }
-    printf("%s", html_source);
+//     if (bytes_received == -1) {
+//         perror("recv");
+//         return -1;
+//     }
+//     printf("%s", html_source);
 
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
-    SSL_CTX_free(ctx);
-    close(fd);
-    // free(html_source);
-    return html_source;
-}
+//     SSL_shutdown(ssl);
+//     SSL_free(ssl);
+//     SSL_CTX_free(ctx);
+//     close(fd);
+//     // free(html_source);
+//     return html_source;
+// }

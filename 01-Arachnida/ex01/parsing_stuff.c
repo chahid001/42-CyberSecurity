@@ -64,6 +64,7 @@ t_url   *parse_url(char *url) {
     
 
     parsed_url->host =  (char *)malloc((len_host * sizeof(char)) + 1);
+    //protection
 
     if (start_with(url, "www")) {
         strlcpy(parsed_url->host, url,  len_host);
@@ -71,12 +72,16 @@ t_url   *parse_url(char *url) {
         // Copying only the url ( minus 4 of www. and 1 for \0 -> 5)
         snprintf(parsed_url->host, len_host, "www.%.*s", len_host - 5, url);
     }
-    
-    
+
+    parsed_url->ipv4 = (char *)malloc(15 * sizeof(char)); // xxx.xxx.xxx.xxx -> max: 15 chars
+    // protection
+    parsed_url->ipv4 = get_ipv4(parsed_url->host); // optimise memory
+    // testing
     printf("REF_URL: %s\n", parsed_url->url);
     printf("URL: %s\n", parsed_url->host);
     printf("URI: %s\n", parsed_url->uri);
     printf("PORT: %d\n", parsed_url->port);
+    printf("IP: %s\n", parsed_url->ipv4);
 
     return parsed_url;
 }
