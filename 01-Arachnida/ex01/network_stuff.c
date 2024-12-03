@@ -1,8 +1,6 @@
 #include "spider.h"
 
-
-
-int    create_socket(char* ipv4, int port) {
+int    create_socket(char *ipv4, int port) {
     int sock_fd;
     struct sockaddr_in target;
 
@@ -14,7 +12,7 @@ int    create_socket(char* ipv4, int port) {
     }
 
     target.sin_family = AF_INET;
-    target.sin_port = htons(443);
+    target.sin_port = htons(port);
     target.sin_addr.s_addr = inet_addr(ipv4);
 
 
@@ -23,14 +21,14 @@ int    create_socket(char* ipv4, int port) {
         close(sock_fd);
         return -1;
     }
-    free(ipv4);
 
     return sock_fd;
 }
 
-void    ft_response(SSL *ssl) {
+char    *ft_response(SSL *ssl) {
 
     char    buffer[PAGE_SIZE];
+    int     bytes_received;
     size_t  total_size = 0;
     char    *response;
 
@@ -38,33 +36,63 @@ void    ft_response(SSL *ssl) {
 
     // Protection
 
-    
-    
+    while ((bytes_received = SSL_read(ssl, buffer, sizeof(buffer) - 1)) > 0) {
+        buffer[bytes_received] = '\0';  
+        char *new_res = realloc(response, total_size + bytes_received);
+        if (!new_res) {
+            // free(response);
 
+            return NULL;
+        }
+        response = new_res;
+        memcpy(response + total_size, buffer, bytes_received);
+        total_size += bytes_received;
+        response[total_size] = '\0';
+    }
+
+    if (bytes_received == -1) {
+        perror("recv");
+        return NULL;
+    }
+
+
+    return response;
 }
-void    ft_request(t_url *url) {
+
+char    *ft_request(t_url *url) {
 
     t_socket    *socket;
     char        request[1024];
+    char        *response;
     
-    SSL_init();
+    ft_SSL_init();
 
+    socket = (t_socket *)malloc(sizeof(t_socket));
 
     socket->fd = create_socket(url->ipv4, url->port); // Creation of socket
     socket->ctx = SSL_CTX_new(TLS_client_method()); // Init ssl Context -> Client
-
+    
     if (!socket->ctx) {
         fprintf(stderr, "Eroor");
         close(socket->fd);
+        free(socket);
     }
 
     socket->ssl = SSL_new(socket->ctx);
+
+    if (!socket->ssl) {
+        SSL_CTX_free(socket->ctx);
+        close(socket->fd);
+        free(socket);
+    }
+
     SSL_set_tlsext_host_name(socket->ssl, url->host);
     SSL_set_fd(socket->ssl, socket->fd);
 
     if (SSL_connect(socket->ssl) <= 0) {
         ft_SSL_free(socket->ssl, socket->ctx);
         close(socket->fd);
+        free(socket);
         exit(1);
     }
 
@@ -79,50 +107,23 @@ void    ft_request(t_url *url) {
 
     SSL_write(socket->ssl, request, strlen(request));
 
-}
-
-// char* ft_request(int fd, char *domain) {
-
-
-
-
-//     
+    if ( !(response = ft_response(socket->ssl))) {
+        ft_SSL_free(socket->ssl, socket->ctx);
+        close(socket->fd);
+        free(socket);
+        exit(1); 
+    }
 
     
-//     size_t total_size = 0;
-//     size_t chunck_size = 4096;
-//     char *html_source = malloc(chunck_size * sizeof(char));
-
-//     if (!html_source) {
-//         return -1;
-//     }
-
-//     char buffer[4096];
-//     int bytes_received;
-//     int i = 0;
-//     while ((bytes_received = SSL_read(ssl, buffer, sizeof(buffer) - 1)) > 0) {
-//         buffer[bytes_received] = '\0';  
-//         char *new_html = realloc(html_source, total_size + bytes_received);
-//         if (!new_html) {
-//             free(html_source);
-//             return -1;
-//         }
-//         html_source = new_html;
-//         memcpy(html_source + total_size, buffer, bytes_received);
-//         total_size += bytes_received;
-//         html_source[total_size] = '\0'; 
-//     }
-
-//     if (bytes_received == -1) {
-//         perror("recv");
-//         return -1;
-//     }
-//     printf("%s", html_source);
-
-//     SSL_shutdown(ssl);
-//     SSL_free(ssl);
-//     SSL_CTX_free(ctx);
-//     close(fd);
-//     // free(html_source);
-//     return html_source;
-// }
+    SSL_shutdown(socket->ssl);
+    ft_SSL_free(socket->ssl, socket->ctx);
+    close(socket->fd);
+    
+    free(socket);
+    free(url->uri);
+    free(url->host);
+    free(url->ipv4);
+    free(url);
+    
+    return response;
+}

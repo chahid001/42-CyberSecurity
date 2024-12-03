@@ -32,7 +32,7 @@ t_url   *parse_url(char *url) {
         url += 8;
     } else {
         printf("error: not valid url\n");
-        free(parsed_url);
+        // free(parsed_url);
         exit(1);
     }
 
@@ -42,13 +42,13 @@ t_url   *parse_url(char *url) {
     size_t len_host;
     if (pos) {
         len_pos = strlen(pos);
-        parsed_url->uri =  (char *)malloc((len_pos + 1) * sizeof(char));
+        parsed_url->uri = (char *)malloc((len_pos + 1) * sizeof(char));
         if (!parsed_url->uri) {
             //error
         }
         strcpy(parsed_url->uri, pos);
     } else {
-        parsed_url->uri =  (char *)malloc(sizeof(char) + 1);
+        parsed_url->uri = (char *)malloc(sizeof(char) + 1);
         if (!parsed_url->uri) {
             //error
         }
@@ -63,7 +63,7 @@ t_url   *parse_url(char *url) {
     }
     
 
-    parsed_url->host =  (char *)malloc((len_host * sizeof(char)) + 1);
+    parsed_url->host = (char *)malloc((len_host * sizeof(char)) + 1);
     //protection
 
     if (start_with(url, "www")) {
@@ -73,7 +73,6 @@ t_url   *parse_url(char *url) {
         snprintf(parsed_url->host, len_host, "www.%.*s", len_host - 5, url);
     }
 
-    parsed_url->ipv4 = (char *)malloc(15 * sizeof(char)); // xxx.xxx.xxx.xxx -> max: 15 chars
     // protection
     parsed_url->ipv4 = get_ipv4(parsed_url->host); // optimise memory
     // testing
@@ -86,31 +85,31 @@ t_url   *parse_url(char *url) {
     return parsed_url;
 }
 
-void    parse_html(const char *html_source) {
+// void    parse_html(const char *html_source) {
 
-    const char *img_tag = "<img ";
-    const char *src_attribute = "src=\"";
+//     const char *img_tag = "<img ";
+//     const char *src_attribute = "src=\"";
 
-    char* pos = html_source;
-    // while(html_source) {
-    while ((pos = strstr(pos, img_tag)) != NULL) {
+//     char* pos = html_source;
+//     // while(html_source) {
+//     while ((pos = strstr(pos, img_tag)) != NULL) {
 
-        char* src_start = strstr(pos, src_attribute);
-        if (src_start) {
-            src_start += strlen(src_attribute); // pass src="
-            char* src_end = strchr(src_start, '"');
+//         char* src_start = strstr(pos, src_attribute);
+//         if (src_start) {
+//             src_start += strlen(src_attribute); // pass src="
+//             char* src_end = strchr(src_start, '"');
 
-            if (src_end) {
-                size_t len = (size_t)(src_end - src_start);
-                char *img_path = malloc((len * sizeof(char)) + 1);
-                memcpy(img_path, src_start, len);
-                img_path += '\0';
-                printf("srcsss: %s\n", img_path);
-                free(img_path);
-            }
-        }
-        pos++;
-    }
+//             if (src_end) {
+//                 size_t len = (size_t)(src_end - src_start);
+//                 char *img_path = malloc((len * sizeof(char)) + 1);
+//                 memcpy(img_path, src_start, len);
+//                 img_path += '\0';
+//                 printf("srcsss: %s\n", img_path);
+//                 free(img_path);
+//             }
+//         }
+//         pos++;
+//     }
         
         
         
@@ -118,12 +117,12 @@ void    parse_html(const char *html_source) {
         
         
         
-        // printf("srcsss: %s\n", img_path);
-        // printf("/////////////\n");
+//         // printf("srcsss: %s\n", img_path);
+//         // printf("/////////////\n");
 
-        // printf("size: %d\n", strlen(src_start));
-        // printf("size: %d\n", strlen(src_end));
-    //     html_source++;
-    // }
+//         // printf("size: %d\n", strlen(src_start));
+//         // printf("size: %d\n", strlen(src_end));
+//     //     html_source++;
+//     // }
 
-}
+// }

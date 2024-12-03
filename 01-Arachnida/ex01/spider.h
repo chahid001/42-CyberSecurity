@@ -58,7 +58,9 @@ int         create_socket(char* ipv4, int port);
 
 char        *get_ipv4(const char *domain_name);
 
-char*         ft_http(int fd, char *domain);
+
+char    *ft_response(SSL *ssl);
+char    *ft_request(t_url *url);
 void    parse_html(const char *html_source);
 
 bool    start_with(char *url, char *reference);
