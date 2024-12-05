@@ -5,9 +5,9 @@ static void print_usage() {
     exit(1);
 }
 
-t_opts   *ft_args(int argc, char **argv) {
+t_Opts   *ft_args(int argc, char **argv) {
 
-    t_opts *opts;
+    t_Opts *opts;
 
     int opt;
     int recursive = 0;
@@ -50,7 +50,7 @@ t_opts   *ft_args(int argc, char **argv) {
     }
 
 
-    opts = (t_opts*)malloc(sizeof(t_opts));
+    opts = (t_Opts*)malloc(sizeof(t_Opts));
 
     //protection
 

@@ -1,5 +1,9 @@
 #include "spider.h"
 
+/*
+    Parsing stuff because parsing is cool.
+*/
+
 bool    start_with(char *url, char *reference) {
 
     int i = 0;
@@ -15,16 +19,20 @@ bool    start_with(char *url, char *reference) {
     return 1;
 }
 
-t_url   *parse_url(char *url) {
+t_URL   *parse_url(char *url) {
 
-    t_url *parsed_url;
+    t_URL *parsed_url;
 
-    parsed_url = (t_url *)malloc(sizeof(t_url));
+    parsed_url = (t_URL *)malloc(sizeof(t_URL));
+    parsed_url->url = url; // Reference URL
 
-    parsed_url->url = url; //Reference URL
+    /*
+        Checking the Scheme of the URL, to decide were to assign it.
+        In case of HTTP 80 we work with socket functions.
+        In case of HTTPS 443 we work with SSL functions.
+    */
 
-    // Check & Pass port & Scheme
-    if (start_with(url, HTTP_SCHEME)) {
+    if (start_with(url, HTTP_SCHEME)) { // Scheme
         parsed_url->port = HTTP_PORT;
         url += 7;
     } else if (start_with(url, HTTPS_SCHEME)) {
@@ -32,85 +40,106 @@ t_url   *parse_url(char *url) {
         url += 8;
     } else {
         printf("error: not valid url\n");
-        // free(parsed_url);
+        free(parsed_url);
         exit(1);
     }
 
-    // Check & pass URI
+    /* 
+        Checking if the URL has a URI, if not it will be assigned
+        directly a '/' URI.
+        We check the len to allocate exactly the len of URI.
+    */
+
     char *pos = strchr(url, '/');
     size_t len_pos = 0;
     size_t len_host;
-    if (pos) {
+    if (pos) { // URI
         len_pos = strlen(pos);
         parsed_url->uri = (char *)malloc((len_pos + 1) * sizeof(char));
+
         if (!parsed_url->uri) {
-            //error
+            sprintf(stderr, "Malloc: Failed to allocate URI.");
+            return NULL;
         }
+
         strcpy(parsed_url->uri, pos);
+
     } else {
         parsed_url->uri = (char *)malloc(sizeof(char) + 1);
+
         if (!parsed_url->uri) {
-            //error
+            sprintf(stderr, "Malloc: Failed to allocate URI.");
+            return NULL;
         }
+
         parsed_url->uri[0] = '/';
         parsed_url->uri[1] = '\0';
     }
 
-    // Host URL
-    len_host = (strlen(url) - len_pos) + 1;
-    if (!start_with(url, "www")) {
-        len_host += 4; // Space needed for 'www.'
-    }
     
+    /* 
+        Checking if the URL start with 'www', if yes we need to remove it to keep 
+        the host wirh root domain. In case of redirection it will be added
+        automaticaly with Location header.
+    */
 
-    parsed_url->host = (char *)malloc((len_host * sizeof(char)) + 1);
-    //protection
+    if (start_with(url, "www")) { // Host
+        url += 4; 
+        len_host = (strlen(url) - len_pos) + 1;
+        parsed_url->host = (char *)malloc((len_host * sizeof(char)) + 1);
 
-    if (start_with(url, "www")) {
+        if (!parsed_url->url) {
+            sprintf(stderr, "Malloc: Failed to allocate URI.");
+            return NULL;
+        }
+
         strlcpy(parsed_url->host, url,  len_host);
     } else {
-        // Copying only the url ( minus 4 of www. and 1 for \0 -> 5)
-        snprintf(parsed_url->host, len_host, "www.%.*s", len_host - 5, url);
+        len_host = (strlen(url) - len_pos) + 1;
+        parsed_url->host = (char *)malloc((len_host * sizeof(char)) + 1);
+
+        if (!parsed_url->url) {
+            sprintf(stderr, "Malloc: Failed to allocate URI.");
+            return NULL;
+        }
+        strlcpy(parsed_url->host, url,  len_host);
     }
 
-    // protection
-    parsed_url->ipv4 = get_ipv4(parsed_url->host); // optimise memory
-    // testing
     printf("REF_URL: %s\n", parsed_url->url);
-    printf("URL: %s\n", parsed_url->host);
+    printf("HOST: %s\n", parsed_url->host);
     printf("URI: %s\n", parsed_url->uri);
     printf("PORT: %d\n", parsed_url->port);
-    printf("IP: %s\n", parsed_url->ipv4);
 
     return parsed_url;
 }
 
-// void    parse_html(const char *html_source) {
 
-//     const char *img_tag = "<img ";
-//     const char *src_attribute = "src=\"";
+void    parse_html(const char *response) {
 
-//     char* pos = html_source;
-//     // while(html_source) {
-//     while ((pos = strstr(pos, img_tag)) != NULL) {
+    const char *img_tag = "<img ";
+    const char *src_attribute = "src=\"";
 
-//         char* src_start = strstr(pos, src_attribute);
-//         if (src_start) {
-//             src_start += strlen(src_attribute); // pass src="
-//             char* src_end = strchr(src_start, '"');
+    char* pos = response;
 
-//             if (src_end) {
-//                 size_t len = (size_t)(src_end - src_start);
-//                 char *img_path = malloc((len * sizeof(char)) + 1);
-//                 memcpy(img_path, src_start, len);
-//                 img_path += '\0';
-//                 printf("srcsss: %s\n", img_path);
-//                 free(img_path);
-//             }
-//         }
-//         pos++;
-//     }
-        
+    while ((pos = strstr(pos, img_tag)) != NULL) {
+
+        char* src_start = strstr(pos, src_attribute);
+        if (src_start) {
+            src_start += strlen(src_attribute); // pass src="
+            char* src_end = strchr(src_start, '"');
+
+            if (src_end) {
+                size_t len = (size_t)(src_end - src_start);
+                char *img_path = malloc((len * sizeof(char)) + 1);
+                memcpy(img_path, src_start, len);
+                img_path += '\0';
+                printf("Image: %s\n", img_path);
+                free(img_path);
+            }
+        }
+        pos++;
+    }
+}       
         
         
         

@@ -18,50 +18,63 @@
 # define HTTP_PORT 80
 # define HTTPS_PORT 443
 
-typedef struct s_url {
+typedef struct s_URL {
 
     int     port;
     char    *host;
     char    *uri;
     char    *url;
-    char    *ipv4;
+    // char    *ipv4;
 
-}   t_url;
+}   t_URL;
 
+typedef struct s_HTTP_Response {
 
-typedef struct s_opts {
+    int     status_code;
+    char    *header;
+    char    *body;
+    int     is_chunked;
+    long    content_len;
+
+}   t_HTTP_Response;
+
+typedef struct s_Opts {
 
     int     level;
     char    *path;
-    t_url   *url;
+    t_URL   *url;
 
-}   t_opts;
+}   t_Opts;
 
 
-typedef struct s_socket {
+typedef struct s_Socket {
 
     int     fd;
     SSL_CTX *ctx;
     SSL     *ssl;
 
-}   t_socket;
+}   t_Socket;
 
-t_opts      *ft_args(int argc, char **argv);
 
-t_url       *parse_url(char *url);
+t_Opts      *ft_args(int argc, char **argv);
 
+t_URL       *parse_url(char *url);
+void        parse_html(const char *response);
 
 void        ft_SSL_init();
 void        ft_SSL_free(SSL *ssl, SSL_CTX *ctx);
 
 int         create_socket(char* ipv4, int port);
+// char        *get_ipv4(const char *domain_name);
+void        *get_ipv4(const char *domain_name);
+char        *ft_response(SSL *ssl);
+char        *ft_request(t_URL *url);
 
-char        *get_ipv4(const char *domain_name);
+bool        start_with(char *url, char *reference);
+
+t_HTTP_Response *parse_http_response(const char *response);
 
 
-char    *ft_response(SSL *ssl);
-char    *ft_request(t_url *url);
-void    parse_html(const char *html_source);
 
-bool    start_with(char *url, char *reference);
+
 #endif

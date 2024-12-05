@@ -2,13 +2,13 @@ NAME = spider
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 CC = gcc
-CFLAGS = -g -I /usr/local/include -L/usr/local/lib -lssl -lcrypto
+CFLAGS = -g -I /usr/local/include -L/usr/local/lib 
 
 
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(NAME)
+	$(CC) $(CFLAGS) $(OBJ) -o $(NAME) -lssl -lcrypto
 	@echo "Spider compiled successfully ✅"
 
 %.o: %.c 
