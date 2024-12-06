@@ -60,22 +60,19 @@ typedef struct s_Socket {
 t_Opts      *ft_args(int argc, char **argv);
 t_URL       *parse_url(char *url);
 
-
+char    send_request(const t_Socket *socket, const t_URL *url);
 /* Creating & Sending the Request */
 char        *ft_network(const t_URL *url);
-int    create_socket(char* host, char *port);
+int    create_socket(const char* host, const char *port);
 bool    set_blocking_mode(int fd, bool block);
-char    init_https(t_Socket *socket, char *host);
+char    init_https(t_Socket *socket, const char *host);
 void        parse_html(const char *response);
 
 void        ft_SSL_init();
 void        ft_SSL_free(SSL *ssl, SSL_CTX *ctx);
 
-// char        *get_ipv4(const char *domain_name);
-void        *get_ipv4(const char *domain_name);
-char    *get_response(t_Socket *socket, char* port);
-int read_socket(t_Socket *socket, char *buffer, size_t size, char *port);
-
+char    *get_response(const t_Socket *socket, const char* port);
+int read_socket(const t_Socket *socket, char *buffer, const size_t size, const char *port);
 bool        start_with(char *url, char *reference);
 
 t_HTTP_Response *parse_http_response(const char *response);

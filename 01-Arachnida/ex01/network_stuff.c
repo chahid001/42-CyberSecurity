@@ -70,7 +70,7 @@ char timeout_connect(int fd, const struct sockaddr* ipv4, int len, int timeout_s
     with a timeout untill we do connect succesfully.
 */
 
-int    create_socket(char* host, char *port) {
+int    create_socket(const char* host, const char *port) {
     int             sock_fd;
     void            *addr;
     struct addrinfo hints;
@@ -121,11 +121,11 @@ int    create_socket(char* host, char *port) {
 /*
     Init SSL for https connections.
 */
-char    init_https(t_Socket *socket, char *host) {
+char    init_https(t_Socket *socket, const char *host) {
 
     ft_SSL_init();
 
-    const SSL_METHOD *method = TLS_client_method();
+    const SSL_METHOD *method = SSLv23_client_method();
 
     socket->ctx = SSL_CTX_new(method);
 
@@ -161,20 +161,20 @@ char    init_https(t_Socket *socket, char *host) {
     recv -> HTTP
     SSL_read -> HTTPS
 */
-int read_socket(t_Socket *socket, char *buffer, size_t size, char *port) {
+int read_socket(const t_Socket *socket, char *buffer, const size_t size, const char *port) {
 
-    if (port == HTTP_PORT) {
+    if (strcmp(port, HTTP_PORT) == 0) {
 
-    } else if (port == HTTPS_PORT) {
+    } else if (strcmp(port, HTTPS_PORT) == 0) {
         return SSL_read(socket->ssl, buffer, size - 1);
-    }
-
+    } 
+    return 0; 
 }     
 
 /*
     Allocate the Raw response into a pointer.
 */
-char    *get_response(t_Socket *socket, char* port) {
+char    *get_response(const t_Socket *socket, const char* port) {
 
     char    buffer[PAGE_SIZE];
     int     bytes_received;
@@ -213,9 +213,9 @@ char    *get_response(t_Socket *socket, char* port) {
 }
 
 
-char    send_request(t_Socket *socket, t_URL *url) {
+char    send_request(const t_Socket *socket, const t_URL *url) {
 
-    char *request[1024];
+    char request[1024];
 
     snprintf(request, sizeof(request), 
         "GET %s HTTP/1.1\r\n"
@@ -228,9 +228,9 @@ char    send_request(t_Socket *socket, t_URL *url) {
         "Accept-Encoding: identity\r\n\r\n"
         "\r\n", url->uri, url->host);
 
-    if (url->port == HTTP_PORT) {
+    if (strcmp(url->port,HTTP_PORT) == 0) {
 
-    } else if (url->port == HTTPS_PORT) {
+    } else if (strcmp(url->port,HTTPS_PORT) == 0) {
         if (SSL_write(socket->ssl, request, strlen(request))) {
             printf("SSL request is succes.\n");
         } else {
@@ -270,12 +270,12 @@ char    *ft_network(const t_URL *url) { // url obj, uri, host, Socket obj,
 
     printf("Protocol: HTTPS\n"); // change later for verbose
 
-    if (url->port == HTTP_PORT) {
+    if (strcmp(url->port, HTTP_PORT) == 0) {
         
         // http
 
 
-    } else if (url->port == HTTPS_PORT) {
+    } else if (strcmp(url->port, HTTPS_PORT) == 0) {
 
         if (init_https(socket, url->host) != 0) {
             perror("Couldn't initialise ssl.");
@@ -310,5 +310,5 @@ char    *ft_network(const t_URL *url) { // url obj, uri, host, Socket obj,
     free(socket);
 
     
-    // return response;
+    return "hello";
 }
