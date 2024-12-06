@@ -73,8 +73,8 @@ void        ft_SSL_free(SSL *ssl, SSL_CTX *ctx);
 
 // char        *get_ipv4(const char *domain_name);
 void        *get_ipv4(const char *domain_name);
-char        *ft_response(SSL *ssl);
-
+char    *get_response(t_Socket *socket, char* port);
+int read_socket(t_Socket *socket, char *buffer, size_t size, char *port);
 
 bool        start_with(char *url, char *reference);
 

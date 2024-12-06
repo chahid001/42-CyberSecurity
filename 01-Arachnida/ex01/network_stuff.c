@@ -42,7 +42,6 @@ bool    set_blocking_mode(int fd, bool block) {
     Making the socket non blocking, connect, block it again, then monitore it with select
     with a timeout (by default 10 sec) before valide it or going to the next socket.
 */
-
 char timeout_connect(int fd, const struct sockaddr* ipv4, int len, int timeout_sec)
 {
     fd_set FDset;
@@ -82,16 +81,17 @@ int    create_socket(char* host, char *port) {
 
     if (!ipv4_str) {
         perror("Malloc: Failed to allocate IPV4.\n");
-        return NULL;
+        return -1;
     }
 
     hints.ai_family = AF_INET; /* IPV4 */       
     hints.ai_socktype = SOCK_STREAM; /* TCP */         
     hints.ai_protocol = IPPROTO_TCP; /* TCP */ 
 
-    if (getaddrinfo(host, port, &hints, &result) != 0) {
+    if (getaddrinfo(host, port, &hints, &result) != 0) { 
         perror("Error: Website not found.");
-        exit(EXIT_FAILURE);
+        free(ipv4_str);
+        return -1;
     } 
 
 
@@ -131,7 +131,6 @@ char    init_https(t_Socket *socket, char *host) {
 
     if (!socket->ctx) {
         perror("Error ctx");
-        close(socket->fd);
         return 1;
     }
 
@@ -142,7 +141,6 @@ char    init_https(t_Socket *socket, char *host) {
     if (!socket->ssl) {
         perror("Error ctx");
         SSL_CTX_free(socket->ctx);
-        close(socket->fd);
         return 1;
     }
 
@@ -152,48 +150,70 @@ char    init_https(t_Socket *socket, char *host) {
     if (SSL_connect(socket->ssl) <= 0) {
         perror("Error connect");
         ft_SSL_free(socket->ssl, socket->ctx);
-        close(socket->fd);
         return 1;
     }
     printf ("Success\n");
     return 0;
 }
 
-// char    *ft_response(SSL *ssl) {
+/*
+    Read socket response base on Protocol Scheme.
+    recv -> HTTP
+    SSL_read -> HTTPS
+*/
+int read_socket(t_Socket *socket, char *buffer, size_t size, char *port) {
 
-//     char    buffer[PAGE_SIZE];
-//     int     bytes_received;
-//     size_t  total_size = 0;
-//     char    *response;
+    if (port == HTTP_PORT) {
 
-//     response = malloc(PAGE_SIZE * sizeof(char));
+    } else if (port == HTTPS_PORT) {
+        return SSL_read(socket->ssl, buffer, size - 1);
+    }
 
-//     // Protection
+}     
 
-//     while ((bytes_received = SSL_read(ssl, buffer, sizeof(buffer) - 1)) > 0) {
-//         buffer[bytes_received] = '\0';  
-//         char *new_res = realloc(response, total_size + bytes_received);
-//         if (!new_res) {
-//             // free(response);
+/*
+    Allocate the Raw response into a pointer.
+*/
+char    *get_response(t_Socket *socket, char* port) {
 
-//             return NULL;
-//         }
-//         response = new_res;
-//         memcpy(response + total_size, buffer, bytes_received);
-//         total_size += bytes_received;
-//         response[total_size] = '\0';
-//     }
+    char    buffer[PAGE_SIZE];
+    int     bytes_received;
+    size_t  total_size = 0;
+    char    *response;
 
-//     if (bytes_received == -1) {
-//         perror("recv");
-//         return NULL;
-//     }
+    response = malloc(PAGE_SIZE * sizeof(char));
+    if (!response) {
+        perror("Malloc: Failed to allocate response.\n");
+        free(response);
+        return NULL;
+    }
+
+    while ((bytes_received = read_socket(socket, buffer, PAGE_SIZE, port)) > 0) {
+        buffer[bytes_received] = '\0';  
+        
+        char *new_res = realloc(response, total_size + bytes_received);
+        
+        if (!new_res) {
+            perror("Realloc Failed.\n");
+            free(response);
+            return NULL;
+        }
+        response = new_res;
+        memcpy(response + total_size, buffer, bytes_received);
+        total_size += bytes_received;
+        response[total_size] = '\0';
+    }
+
+    if (bytes_received == -1) {
+        perror("Failed to pass response.\n");
+        free(response);
+        return NULL;
+    }
+    return response;
+}
 
 
-//     return response;
-// }
-
-void    send_request(t_Socket *socket, t_URL *url, char *SCHEME) {
+char    send_request(t_Socket *socket, t_URL *url) {
 
     char *request[1024];
 
@@ -208,20 +228,25 @@ void    send_request(t_Socket *socket, t_URL *url, char *SCHEME) {
         "Accept-Encoding: identity\r\n\r\n"
         "\r\n", url->uri, url->host);
 
-    if (SCHEME == HTTP_SCHEME) {
+    if (url->port == HTTP_PORT) {
 
-    } else if (SCHEME == HTTPS_SCHEME) {
+    } else if (url->port == HTTPS_PORT) {
         if (SSL_write(socket->ssl, request, strlen(request))) {
             printf("SSL request is succes.\n");
+        } else {
+            perror("SSL failed.\n");
+            return 1;
         }
     }
-
+    
+    return 0;
 }
 
-char    *ft_network(const t_URL *url) {
+
+char    *ft_network(const t_URL *url) { // url obj, uri, host, Socket obj, 
 
     t_Socket    *socket;
-    // char        *response;
+    char        *raw_response;
 
     socket = (t_Socket *)malloc(sizeof(t_Socket));
 
@@ -238,41 +263,52 @@ char    *ft_network(const t_URL *url) {
 
     socket->fd = create_socket(url->host, url->port);
 
-    printf("Protocol: HTTPS\n");
+    if (socket->fd == -1) {
+        free(socket);
+        return NULL;
+    }
+
+    printf("Protocol: HTTPS\n"); // change later for verbose
 
     if (url->port == HTTP_PORT) {
+        
+        // http
+
 
     } else if (url->port == HTTPS_PORT) {
-        
-        
 
         if (init_https(socket, url->host) != 0) {
             perror("Couldn't initialise ssl.");
+            close(socket->fd);
             free(socket);
-        }
-
-        send_request(socket, url, HTTPS_SCHEME);
-        
+            return NULL;
+        } 
 
     }
 
-    // if ( !(response = ft_response(socket->ssl))) {
-    //     ft_SSL_free(socket->ssl, socket->ctx);
-    //     close(socket->fd);
-    //     free(socket);
-    //     exit(1); 
-    // }
-    // printf("%s", response);
-    //parse response
-    // parse_http_response(response);
+    if (send_request(socket, url) != 0) {
+        close(socket->fd);
+        free(socket);
+        return (NULL);
+    }
+
+    raw_response = get_response(socket, url->port);
+
+    if (!raw_response) {
+        close(socket->fd);
+        free(socket);
+        return NULL;
+    }
+
+    printf("%s", raw_response);
+    free(raw_response);
+
+
     SSL_shutdown(socket->ssl);
     ft_SSL_free(socket->ssl, socket->ctx);
     close(socket->fd);
-    
     free(socket);
-    free(url->uri);
-    free(url->host);
-    free(url);
+
     
     // return response;
 }

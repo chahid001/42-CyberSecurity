@@ -10,6 +10,10 @@ int main(int argc, char** argv) {
 
 
     // parse_html(response);
+     // -> Mandatory
+    free(opts->url->uri);
+    free(opts->url->host);
+    free(opts->url);
     free(opts);
     // free(response);
     system("leaks spider");
