@@ -86,7 +86,7 @@ char timeout_connect(int fd, const struct sockaddr* ipv4, int len, int timeout_s
         perror("FD: Failing to switch Blocking mode.");
     }
     connect(fd, ipv4, len);
-    if (set_blocking_mode(fd, 1)) {
+    if (!set_blocking_mode(fd, 1)) {
         perror("FD: Failing to switch Blocking mode.");
     }
 
@@ -104,15 +104,16 @@ char timeout_connect(int fd, const struct sockaddr* ipv4, int len, int timeout_s
     with a timeout untill we do connect succesfully.
 */
 
-int    create_socket(char* host, char *port, char *ipv4) {
-    int sock_fd;
+int    create_socket(char* host, char *port) {
+    int             sock_fd;
+    void            *addr;
     struct addrinfo hints;
     struct addrinfo *result;
     
     memset(&hints, 0, sizeof(hints));
-    ipv4 = (char *)malloc(INET_ADDRSTRLEN * sizeof(char));
+    char *ipv4_str = (char *)malloc(INET_ADDRSTRLEN * sizeof(char));
 
-    if (!ipv4) {
+    if (!ipv4_str) {
         perror("Malloc: Failed to allocate IPV4.\n");
         return NULL;
     }
@@ -121,7 +122,15 @@ int    create_socket(char* host, char *port, char *ipv4) {
     hints.ai_socktype = SOCK_STREAM; /* TCP */         
     hints.ai_protocol = IPPROTO_TCP; /* TCP */ 
 
-    getaddrinfo(host, port, &hints, &result); 
+    if (getaddrinfo(host, port, &hints, &result) != 0) {
+        perror("Error: Website not found.");
+        exit(EXIT_FAILURE);
+    } 
+
+
+    struct sockaddr_in *ipv4 = (struct sockaddr_in*)result->ai_addr;
+    addr = &(ipv4->sin_addr);
+
 
     while (result != NULL) {
 
@@ -130,15 +139,15 @@ int    create_socket(char* host, char *port, char *ipv4) {
             continue;
         }
         if (timeout_connect(sock_fd, result->ai_addr, result->ai_addrlen, 10)) {
-            inet_ntop(AF_INET, result->ai_addr, ipv4, sizeof(ipv4)); /* Converting IPV4 to string */
-            printf("Connected to %s -> | %s | - port | %s | \n", host, ipv4, port);
+            inet_ntop(result->ai_family, addr, ipv4_str, INET_ADDRSTRLEN); /* Converting IPV4 to string */
+            printf("Connected to %s -> | %s | - port - %s - \n", host, ipv4_str, port);
             break;
         }
         close(sock_fd);
         result = result->ai_next;
     }
     freeaddrinfo(result);
-
+    free(ipv4_str);
     return sock_fd;
 }
 
@@ -194,10 +203,10 @@ char    *ft_request(const t_URL *url) {
     socket->ssl = NULL;
 
 
-    socket->fd = create_socket(url->host, url->port, url->ipv4);
+    socket->fd = create_socket(url->host, url->port);
     
 
-
+    printf("Socket, %d", socket->fd);
     
     // ft_SSL_init(); /* Initialise SSL */
 
@@ -206,42 +215,42 @@ char    *ft_request(const t_URL *url) {
 
 
      // Creation of socket
-    const SSL_METHOD *method = TLS_client_method();
+    // const SSL_METHOD *method = TLS_client_method();
     
-    socket->ctx = SSL_CTX_new(method); // Init ssl Context -> Client
+    // socket->ctx = SSL_CTX_new(method); // Init ssl Context -> Client
     
-    if (!socket->ctx) {
-        fprintf(stderr, "Eroor");
-        close(socket->fd);
-        free(socket);
-    }
+    // if (!socket->ctx) {
+    //     fprintf(stderr, "Eroor");
+    //     close(socket->fd);
+    //     free(socket);
+    // }
 
     // SSL_CTX_set_options(socket->ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
-    socket->ssl = SSL_new(socket->ctx);
+    // socket->ssl = SSL_new(socket->ctx);
 
-    if (!socket->ssl) {
-        SSL_CTX_free(socket->ctx);
-        close(socket->fd);
-        free(socket);
-    }
+    // if (!socket->ssl) {
+    //     SSL_CTX_free(socket->ctx);
+    //     close(socket->fd);
+    //     free(socket);
+    // }
 
-    SSL_set_tlsext_host_name(socket->ssl, "github.com");
-    SSL_set_fd(socket->ssl, socket->fd);
+    // SSL_set_tlsext_host_name(socket->ssl, "github.com");
+    // SSL_set_fd(socket->ssl, socket->fd);
 
-    if (SSL_connect(socket->ssl) <= 0) {
-        ft_SSL_free(socket->ssl, socket->ctx);
-        close(socket->fd);
-        free(socket);
-        exit(1);
-    }
+    // if (SSL_connect(socket->ssl) <= 0) {
+    //     ft_SSL_free(socket->ssl, socket->ctx);
+    //     close(socket->fd);
+    //     free(socket);
+    //     exit(1);
+    // }
 
-    const char* request = "GET / HTTP/1.1\r\n"
-                          "Host:  github.com \r\n"
-                          "User-Agent: curl/8.4.0\r\n"
-                          "Accept: */*\r\n"                          
-                          "Accept-Encoding: encoding\r\n"
-                          "Connection: close\r\n\r\n";
+    // const char* request = "GET / HTTP/1.1\r\n"
+    //                       "Host:  github.com \r\n"
+    //                       "User-Agent: curl/8.4.0\r\n"
+    //                       "Accept: */*\r\n"                          
+    //                       "Accept-Encoding: encoding\r\n"
+    //                       "Connection: close\r\n\r\n";
 
     
     // snprintf(request, sizeof(request), 
@@ -264,26 +273,25 @@ char    *ft_request(const t_URL *url) {
         // "User-Agent: curl/8.4.0\r\n"
         // "Connection: keep-alive\r\n"
         // "Accept-Encoding: identity\r\n"
-    SSL_write(socket->ssl, request, strlen(request));
+    // SSL_write(socket->ssl, request, strlen(request));
 
-    if ( !(response = ft_response(socket->ssl))) {
-        ft_SSL_free(socket->ssl, socket->ctx);
-        close(socket->fd);
-        free(socket);
-        exit(1); 
-    }
-    printf("%s", response);
+    // if ( !(response = ft_response(socket->ssl))) {
+    //     ft_SSL_free(socket->ssl, socket->ctx);
+    //     close(socket->fd);
+    //     free(socket);
+    //     exit(1); 
+    // }
+    // printf("%s", response);
     //parse response
     // parse_http_response(response);
-    SSL_shutdown(socket->ssl);
-    ft_SSL_free(socket->ssl, socket->ctx);
+    // SSL_shutdown(socket->ssl);
+    // ft_SSL_free(socket->ssl, socket->ctx);
     close(socket->fd);
     
     free(socket);
     free(url->uri);
     free(url->host);
-    // free(url->ipv4);
     free(url);
     
-    return response;
+    // return response;
 }

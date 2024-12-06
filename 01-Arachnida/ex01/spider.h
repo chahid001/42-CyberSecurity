@@ -25,7 +25,6 @@ typedef struct s_URL {
     char    *host;
     char    *uri;
     char    *url;
-    char    *ipv4;
 
 }   t_URL;
 
@@ -64,7 +63,7 @@ t_URL       *parse_url(char *url);
 
 /* Creating & Sending the Request */
 char        *ft_request(const t_URL *url);
-int    create_socket(char* host, char *port, char *ipv4);
+int    create_socket(char* host, char *port);
 bool    set_blocking_mode(int fd, bool block);
 
 void        parse_html(const char *response);
