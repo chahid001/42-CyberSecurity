@@ -65,7 +65,7 @@ t_URL       *parse_url(char *url);
 /* Creating & Sending the Request */
 char        *ft_request(const t_URL *url);
 int    create_socket(char* host, char *port, char *ipv4);
-
+bool    set_blocking_mode(int fd, bool block);
 
 void        parse_html(const char *response);
 

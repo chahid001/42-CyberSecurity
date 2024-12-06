@@ -7,33 +7,6 @@
     Malloc: Socket obj, ipv4
 */
 
-// char* extract_cookies(const char* response) {
-//     const char* set_cookie_start = "Set-Cookie: ";
-//     const char* line_start = response;
-//     char* cookies = malloc(1); // Start with empty string
-//     cookies[0] = '\0'; // Null-terminate
-
-//     while ((line_start = strstr(line_start, set_cookie_start)) != NULL) {
-//         line_start += strlen(set_cookie_start); // Skip "Set-Cookie: "
-//         const char* line_end = strstr(line_start, "\r\n");
-//         if (!line_end) break; // No more headers
-        
-//         size_t cookie_length = line_end - line_start;
-//         char* cookie = malloc(cookie_length + 1);
-//         strncpy(cookie, line_start, cookie_length);
-//         cookie[cookie_length] = '\0';
-
-//         // Append to cookies string
-//         size_t current_length = strlen(cookies);
-//         cookies = realloc(cookies, current_length + cookie_length + 3); // Add "; " and null terminator
-//         strcat(cookies, cookie);
-//         strcat(cookies, "; "); // Cookies are separated by "; "
-//         free(cookie);
-
-//         line_start = line_end; // Move to the next line
-//     }
-//     return cookies;
-// }
 
 // t_HTTP_Response *parse_http_response(const char *response) {
 
@@ -76,46 +49,54 @@
 bool    set_blocking_mode(int fd, bool block) {
     
     if (fd < 0) {
-        return 0;
+        perror("Invalid file descriptor");
+        return false;
+    }
+    int flags = fcntl(fd, F_GETFL);
+    if (flags == -1) {
+        perror("Failed to get file descriptor flags");
+        return false;
+    }
+    if (block) {
+        flags &= ~O_NONBLOCK; /* reversing O_NONBLOCK (Blocking) then setting flags to blocking mode */
+    } else {
+        flags |= O_NONBLOCK; /* Setting Non blocking mode */
     }
 
-    int flag = fcntl(fd, F_GETFL);
-    if (flag == -1) {
-        return 0;
+    if (fcntl(fd, F_SETFL, flags) == 0) {
+        return true;
+    } else {
+        perror("Failed to set file descriptor flags");
+        return false;
     }
-
-    // if (flag == block) {
-    //     flag &= 
-    // }
 }
 
-// {
-//    if (fd < 0) return 0;
+/*
+    Making the socket non blocking, connect, block it again, then monitore it with select
+    with a timeout (by default 10 sec) before valide it or going to the next socket.
+*/
 
-//    int flags = fcntl(fd, F_GETFL, 0);
-//    if (flags == -1) return 0;
-//    flags = blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
-//    return (fcntl(fd, F_SETFL, flags) == 0) ? 1 : 0;
+char timeout_connect(int fd, const struct sockaddr* ipv4, int len, int timeout_sec)
+{
+    fd_set FDset;
+    struct timeval tv;
+    int ret;
 
-// }
+    if (!set_blocking_mode(fd, 0)) {
+        perror("FD: Failing to switch Blocking mode.");
+    }
+    connect(fd, ipv4, len);
+    if (set_blocking_mode(fd, 1)) {
+        perror("FD: Failing to switch Blocking mode.");
+    }
 
-// char timeout_connect(int fd, const struct sockaddr* ipv4, int len, int timeout_sec)
-// {
-//     fd_set FDset;
-//     struct timeval tv;
-//     int ret;
-
-//     set_blocking_mode(fd, 0);
-//     connect(fd, ipv4, len);
-//     set_blocking_mode(fd, 1); 
-
-//     FD_ZERO(&fdset);
-//     FD_SET(fd, &fdset);
-//     tv.tv_sec = timeout_sec;
-//     tv.tv_usec = 0;
-//     r = select(fd + 1, NULL, &fdset, NULL, &tv) == 1;
-//     return r;
-// }
+    FD_ZERO(&FDset);
+    FD_SET(fd, &FDset);
+    tv.tv_sec = timeout_sec;
+    tv.tv_usec = 0;
+    ret = select(fd + 1, NULL, &FDset, NULL, &tv) == 1;
+    return ret;
+}
 
 /*
     Finding the appropriate IPV4 for the host, 
