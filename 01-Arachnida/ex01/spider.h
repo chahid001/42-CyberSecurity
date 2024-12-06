@@ -62,10 +62,10 @@ t_URL       *parse_url(char *url);
 
 
 /* Creating & Sending the Request */
-char        *ft_request(const t_URL *url);
+char        *ft_network(const t_URL *url);
 int    create_socket(char* host, char *port);
 bool    set_blocking_mode(int fd, bool block);
-
+char    init_https(t_Socket *socket, char *host);
 void        parse_html(const char *response);
 
 void        ft_SSL_init();

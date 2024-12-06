@@ -6,7 +6,7 @@ int main(int argc, char** argv) {
 
     t_Opts *opts = ft_args(argc, argv);
 
-    ft_request(opts->url);
+    ft_network(opts->url);
 
 
     // parse_html(response);

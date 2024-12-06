@@ -8,39 +8,6 @@
 */
 
 
-// t_HTTP_Response *parse_http_response(const char *response) {
-
-//     t_HTTP_Response *res_parsed = (t_HTTP_Response *)malloc(sizeof(t_HTTP_Response));
-
-//     //Protection
-
-//     res_parsed->header = NULL;
-//     res_parsed->body = NULL;
-//     res_parsed->is_chunked = 0;
-//     res_parsed->content_len = -1; 
-    
-//     const char *header_end = strstr(response, "\r\n\r\n"); // The header ends with \r\n\r\n
-
-//     if (!header_end) {
-//         printf("error in parsing header");
-//         free(header_end);
-//         return NULL;
-//     }
-
-//     size_t header_len = (size_t)(header_end - response);
-
-//     res_parsed->header = strndup(response, header_len);
-
-
-//     printf("size of response: %s\n", res_parsed->header);
-    
-
-//     free(res_parsed);
-//     free(response);
-
-
-// }
-
 /*
     Set blocking mode 
     | 0 -> non-blocking
@@ -151,6 +118,47 @@ int    create_socket(char* host, char *port) {
     return sock_fd;
 }
 
+/*
+    Init SSL for https connections.
+*/
+char    init_https(t_Socket *socket, char *host) {
+
+    ft_SSL_init();
+
+    const SSL_METHOD *method = TLS_client_method();
+
+    socket->ctx = SSL_CTX_new(method);
+
+    if (!socket->ctx) {
+        perror("Error ctx");
+        close(socket->fd);
+        return 1;
+    }
+
+    SSL_CTX_set_options(socket->ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+
+    socket->ssl = SSL_new(socket->ctx);
+
+    if (!socket->ssl) {
+        perror("Error ctx");
+        SSL_CTX_free(socket->ctx);
+        close(socket->fd);
+        return 1;
+    }
+
+    SSL_set_tlsext_host_name(socket->ssl, host);
+    SSL_set_fd(socket->ssl, socket->fd);
+
+    if (SSL_connect(socket->ssl) <= 0) {
+        perror("Error connect");
+        ft_SSL_free(socket->ssl, socket->ctx);
+        close(socket->fd);
+        return 1;
+    }
+    printf ("Success\n");
+    return 0;
+}
+
 // char    *ft_response(SSL *ssl) {
 
 //     char    buffer[PAGE_SIZE];
@@ -185,7 +193,32 @@ int    create_socket(char* host, char *port) {
 //     return response;
 // }
 
-char    *ft_request(const t_URL *url) {
+void    send_request(t_Socket *socket, t_URL *url, char *SCHEME) {
+
+    char *request[1024];
+
+    snprintf(request, sizeof(request), 
+        "GET %s HTTP/1.1\r\n"
+        "Host: %s \r\n"
+        "Content-Length: 0\r\n"
+        "Content-Type: application/x-www-form-urlencoded\r\n"
+        "Accept: */*\r\n"
+        "User-Agent: curl/8.4.0\r\n"
+        "Connection: close\r\n"
+        "Accept-Encoding: identity\r\n\r\n"
+        "\r\n", url->uri, url->host);
+
+    if (SCHEME == HTTP_SCHEME) {
+
+    } else if (SCHEME == HTTPS_SCHEME) {
+        if (SSL_write(socket->ssl, request, strlen(request))) {
+            printf("SSL request is succes.\n");
+        }
+    }
+
+}
+
+char    *ft_network(const t_URL *url) {
 
     t_Socket    *socket;
     // char        *response;
@@ -204,76 +237,24 @@ char    *ft_request(const t_URL *url) {
 
 
     socket->fd = create_socket(url->host, url->port);
-    
 
-    printf("Socket, %d", socket->fd);
-    
-    // ft_SSL_init(); /* Initialise SSL */
+    printf("Protocol: HTTPS\n");
 
-    
+    if (url->port == HTTP_PORT) {
 
-
-
-     // Creation of socket
-    // const SSL_METHOD *method = TLS_client_method();
-    
-    // socket->ctx = SSL_CTX_new(method); // Init ssl Context -> Client
-    
-    // if (!socket->ctx) {
-    //     fprintf(stderr, "Eroor");
-    //     close(socket->fd);
-    //     free(socket);
-    // }
-
-    // SSL_CTX_set_options(socket->ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
-
-    // socket->ssl = SSL_new(socket->ctx);
-
-    // if (!socket->ssl) {
-    //     SSL_CTX_free(socket->ctx);
-    //     close(socket->fd);
-    //     free(socket);
-    // }
-
-    // SSL_set_tlsext_host_name(socket->ssl, "github.com");
-    // SSL_set_fd(socket->ssl, socket->fd);
-
-    // if (SSL_connect(socket->ssl) <= 0) {
-    //     ft_SSL_free(socket->ssl, socket->ctx);
-    //     close(socket->fd);
-    //     free(socket);
-    //     exit(1);
-    // }
-
-    // const char* request = "GET / HTTP/1.1\r\n"
-    //                       "Host:  github.com \r\n"
-    //                       "User-Agent: curl/8.4.0\r\n"
-    //                       "Accept: */*\r\n"                          
-    //                       "Accept-Encoding: encoding\r\n"
-    //                       "Connection: close\r\n\r\n";
-
-    
-    // snprintf(request, sizeof(request), 
-    //     "GET / HTTP/1.1\r\n"
-    //     "Host:  stackoverflow.com \r\n"
-    //     "Content-Length: 0\r\n"
-    //     "Content-Type: application/x-www-form-urlencoded\r\n"
-    //     "Accept: */*\r\n"
-    //     "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36\r\n"
-    //     "Connection: close\r\n"
-    //     "Accept-Encoding: identity\r\n\r\n"
-    //     "\r\n");
+    } else if (url->port == HTTPS_PORT) {
         
-        // "GET / HTTP/1.1\r\n"
-        // "Host: stackoverflow.com\r\n"
-        // "Content-Length: 0\r\n"
-        // "Content-Type: application/x-www-form-urlencoded\r\n"
-        // "Accept: */*\r\n"
-        // "Content-Length: 0\r\n"
-        // "User-Agent: curl/8.4.0\r\n"
-        // "Connection: keep-alive\r\n"
-        // "Accept-Encoding: identity\r\n"
-    // SSL_write(socket->ssl, request, strlen(request));
+        
+
+        if (init_https(socket, url->host) != 0) {
+            perror("Couldn't initialise ssl.");
+            free(socket);
+        }
+
+        send_request(socket, url, HTTPS_SCHEME);
+        
+
+    }
 
     // if ( !(response = ft_response(socket->ssl))) {
     //     ft_SSL_free(socket->ssl, socket->ctx);
@@ -284,8 +265,8 @@ char    *ft_request(const t_URL *url) {
     // printf("%s", response);
     //parse response
     // parse_http_response(response);
-    // SSL_shutdown(socket->ssl);
-    // ft_SSL_free(socket->ssl, socket->ctx);
+    SSL_shutdown(socket->ssl);
+    ft_SSL_free(socket->ssl, socket->ctx);
     close(socket->fd);
     
     free(socket);

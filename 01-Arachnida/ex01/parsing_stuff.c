@@ -146,6 +146,38 @@ t_URL   *parse_url(char *url) {
         
         
         
+// t_HTTP_Response *parse_http_response(const char *response) {
+
+//     t_HTTP_Response *res_parsed = (t_HTTP_Response *)malloc(sizeof(t_HTTP_Response));
+
+//     //Protection
+
+//     res_parsed->header = NULL;
+//     res_parsed->body = NULL;
+//     res_parsed->is_chunked = 0;
+//     res_parsed->content_len = -1; 
+    
+//     const char *header_end = strstr(response, "\r\n\r\n"); // The header ends with \r\n\r\n
+
+//     if (!header_end) {
+//         printf("error in parsing header");
+//         free(header_end);
+//         return NULL;
+//     }
+
+//     size_t header_len = (size_t)(header_end - response);
+
+//     res_parsed->header = strndup(response, header_len);
+
+
+//     printf("size of response: %s\n", res_parsed->header);
+    
+
+//     free(res_parsed);
+//     free(response);
+
+
+// }
         
         
         
