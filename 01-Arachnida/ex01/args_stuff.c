@@ -1,5 +1,12 @@
 #include "spider.h"
 
+/*
+    Parsing Args using getops, the behavior can change from Mac to Linux.
+    Parsing URL, LEVEL & PATH.
+
+    Malloc: opts object
+*/
+
 static void print_usage() {
     fprintf(stderr, "Usage ./spider -r [-l level][-p path] URL\n");
     exit(1);
@@ -13,7 +20,7 @@ t_Opts   *ft_args(int argc, char **argv) {
     int recursive = 0;
     int level = -1;
 
-    char *path = "./data";
+    char *path = "./data"; /* Default path */
     char *url = NULL;
 
     while((opt = getopt(argc, argv, "-rl:p:")) != -1) {
@@ -39,27 +46,34 @@ t_Opts   *ft_args(int argc, char **argv) {
     if (!recursive) {
         print_usage();
     }
+
+     /* 
+        We take the value of the URL, then we increment **optind**
+        If optind still smaller than argc it mean we have undesired arguments -> error.
+     */
+
     if (optind < argc) { 
-        url = argv[optind++]; // take value then increment
+        url = argv[optind++];
     } else {
         fprintf(stderr, "Please provide a URL.\n");
-    }
-
-    if (optind < argc) {
+    } if (optind < argc) {
         print_usage();
     }
 
 
     opts = (t_Opts*)malloc(sizeof(t_Opts));
 
-    //protection
+    if (!opts) {
+        write(2, "Malloc: Failed to allocate Options object.\n", 43);
+        return NULL;
+    }
 
     opts->url = parse_url(url);
-    opts->path = path; // Check the path for later
+    opts->path = path;
     if (level > 0) {
         opts->level = level;
     } else {
-        opts->level = 5;
+        opts->level = 5; /* Default value */
     }
 
     return opts;

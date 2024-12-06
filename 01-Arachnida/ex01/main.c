@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv) {
 
-    t_opts *opts = ft_args(argc, argv);
+    t_Opts *opts = ft_args(argc, argv);
 
     // ft_request(opts->url);
 

@@ -11,20 +11,21 @@
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 # include <stdbool.h>
+# include <fcntl.h>
 
 # define PAGE_SIZE 4096
 # define HTTP_SCHEME "http://"
 # define HTTPS_SCHEME "https://"
-# define HTTP_PORT 80
-# define HTTPS_PORT 443
+# define HTTP_PORT "80"
+# define HTTPS_PORT "443"
 
 typedef struct s_URL {
 
-    int     port;
+    char    *port;
     char    *host;
     char    *uri;
     char    *url;
-    // char    *ipv4;
+    char    *ipv4;
 
 }   t_URL;
 
@@ -56,19 +57,25 @@ typedef struct s_Socket {
 }   t_Socket;
 
 
+/* Parsing & Setting Options */
 t_Opts      *ft_args(int argc, char **argv);
-
 t_URL       *parse_url(char *url);
+
+
+/* Creating & Sending the Request */
+char        *ft_request(const t_URL *url);
+int    create_socket(char* host, char *port, char *ipv4);
+
+
 void        parse_html(const char *response);
 
 void        ft_SSL_init();
 void        ft_SSL_free(SSL *ssl, SSL_CTX *ctx);
 
-int         create_socket(char* ipv4, int port);
 // char        *get_ipv4(const char *domain_name);
 void        *get_ipv4(const char *domain_name);
 char        *ft_response(SSL *ssl);
-char        *ft_request(t_URL *url);
+
 
 bool        start_with(char *url, char *reference);
 
