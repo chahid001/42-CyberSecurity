@@ -174,6 +174,7 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
 
     /* Status Code */
     const char *status_code_end = strstr(raw_response, "\r\n"); /* First line */
+    
     if (!status_code_end) {
         printf("Error in parsing status code.\n");
         return NULL;
@@ -184,9 +185,19 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
     sscanf(status_line, "HTTP/%*s %d", &status_code);
     free(status_line);
     check_status_code(status_code);
-    
-
     /* End Status Code*/
+    
+    /* Location */
+    const char *location_start = strstr(raw_response, "Location: "); 
+    if (location_start) {
+        location_start += 10;
+        const char *location_end = strstr(location_start, "\r\n");
+        char* target = strndup(location_start, (size_t)(location_end - location_start));
+        printf("New target: %s\n", target);
+        free(target);
+    }
+    /* End Location */
+
     
     printf("Header: \n%s\n", res_parsed->header);
     
