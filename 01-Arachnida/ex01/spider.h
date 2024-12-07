@@ -35,6 +35,7 @@ typedef struct s_HTTP_Response {
     char    *body;
     int     is_chunked;
     long    content_len;
+    char    *location;
 
 }   t_HTTP_Response;
 
@@ -58,7 +59,7 @@ typedef struct s_Socket {
 
 /* Parsing & Setting Options */
 t_Opts      *ft_args(int argc, char **argv);
-t_URL       *parse_url(char *url);
+t_URL       *parse_url(char *url, bool flag);
 
 char    send_request(const t_Socket *socket, const t_URL *url);
 /* Creating & Sending the Request */

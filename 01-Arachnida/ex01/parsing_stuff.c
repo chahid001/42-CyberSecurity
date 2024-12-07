@@ -21,7 +21,7 @@ bool    start_with(char *url, char *reference) {
     return 1;
 }
 
-t_URL   *parse_url(char *url) {
+t_URL   *parse_url(char *url, bool flag) {
 
     t_URL *parsed_url;
 
@@ -86,7 +86,9 @@ t_URL   *parse_url(char *url) {
     */
 
     if (start_with(url, "www")) { // Host
-        url += 4; 
+        if (flag) {
+            url += 4; 
+        }   
         len_host = (strlen(url) - len_pos) + 1;
         parsed_url->host = (char *)malloc((len_host * sizeof(char)) + 1);
 
@@ -157,6 +159,7 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
 
     res_parsed->header = NULL;
     res_parsed->body = NULL;
+    res_parsed->location = NULL;
     res_parsed->is_chunked = 0;
     res_parsed->content_len = -1; 
     
@@ -192,13 +195,13 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
     if (location_start) {
         location_start += 10;
         const char *location_end = strstr(location_start, "\r\n");
-        char* target = strndup(location_start, (size_t)(location_end - location_start));
-        printf("New target: %s\n", target);
-        free(target);
+        res_parsed->location = strndup(location_start, (size_t)(location_end - location_start));
+        printf("New target: %s\n", res_parsed->location);
+        return res_parsed; /* Get back to redo everything */
     }
     /* End Location */
 
-    
+
     printf("Header: \n%s\n", res_parsed->header);
     
 
