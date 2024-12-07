@@ -146,47 +146,53 @@ t_URL   *parse_url(char *url) {
         
         
         
-// t_HTTP_Response *parse_http_response(const char *response) {
+t_HTTP_Response *parse_http_response(const char *raw_response) {
 
-//     t_HTTP_Response *res_parsed = (t_HTTP_Response *)malloc(sizeof(t_HTTP_Response));
+    t_HTTP_Response *res_parsed = (t_HTTP_Response *)malloc(sizeof(t_HTTP_Response));
 
-//     //Protection
+    if (!res_parsed) {
+        perror("Malloc: Failed to allocate res_parsed.\n");
+        return NULL;
+    }
 
-//     res_parsed->header = NULL;
-//     res_parsed->body = NULL;
-//     res_parsed->is_chunked = 0;
-//     res_parsed->content_len = -1; 
-    
-//     const char *header_end = strstr(response, "\r\n\r\n"); // The header ends with \r\n\r\n
-
-//     if (!header_end) {
-//         printf("error in parsing header");
-//         free(header_end);
-//         return NULL;
-//     }
-
-//     size_t header_len = (size_t)(header_end - response);
-
-//     res_parsed->header = strndup(response, header_len);
-
-
-//     printf("size of response: %s\n", res_parsed->header);
+    res_parsed->header = NULL;
+    res_parsed->body = NULL;
+    res_parsed->is_chunked = 0;
+    res_parsed->content_len = -1; 
     
 
-//     free(res_parsed);
-//     free(response);
+
+    /* Header */
+    const char *header_end = strstr(raw_response, "\r\n\r\n"); // The header ends with \r\n\r\n
+
+    if (!header_end) {
+        printf("Error in parsing header.\n");
+        return NULL;
+    }
+    res_parsed->header = strndup(raw_response, (size_t)(header_end - raw_response));
+    /* end Header */
+
+    /* Status Code */
+    const char *status_code_end = strstr(raw_response, "\r\n"); /* First line */
+    if (!status_code_end) {
+        printf("Error in parsing status code.\n");
+        return NULL;
+    }
+    char *status_line = strndup(raw_response, (status_code_end - raw_response));
+    int status_code = 0;
+
+    sscanf(status_line, "HTTP/%*s %d", &status_code);
+    free(status_line);
+    check_status_code(status_code);
+    
+
+    /* End Status Code*/
+    
+    printf("Header: \n%s\n", res_parsed->header);
+    
 
 
-// }
-        
-        
-        
-//         // printf("srcsss: %s\n", img_path);
-//         // printf("/////////////\n");
-
-//         // printf("size: %d\n", strlen(src_start));
-//         // printf("size: %d\n", strlen(src_end));
-//     //     html_source++;
-//     // }
-
-// }
+    
+    free(res_parsed->header);
+    free(res_parsed);
+}

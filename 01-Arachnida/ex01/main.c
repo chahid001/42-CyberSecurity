@@ -4,17 +4,28 @@
 
 int main(int argc, char** argv) {
 
+    char *response;
     t_Opts *opts = ft_args(argc, argv);
 
-    ft_network(opts->url);
+    response = ft_network(opts->url);
 
+    if (!response) {
+        free(opts->url->uri);
+        free(opts->url->host);
+        free(opts->url);
+        free(opts);
+        exit(EXIT_FAILURE);
+    }
 
-    // parse_html(response);
+    // printf("%s", response);
+
+    parse_http_response(response);
+    free(response);   
      // -> Mandatory
     free(opts->url->uri);
     free(opts->url->host);
     free(opts->url);
     free(opts);
-    // free(response);
+
     system("leaks spider");
 }

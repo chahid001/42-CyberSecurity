@@ -300,15 +300,11 @@ char    *ft_network(const t_URL *url) { // url obj, uri, host, Socket obj,
         return NULL;
     }
 
-    printf("%s", raw_response);
-    free(raw_response);
-
-
     SSL_shutdown(socket->ssl);
     ft_SSL_free(socket->ssl, socket->ctx);
     close(socket->fd);
     free(socket);
 
     
-    return "hello";
+    return raw_response;
 }

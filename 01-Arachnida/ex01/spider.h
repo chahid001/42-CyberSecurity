@@ -79,5 +79,5 @@ t_HTTP_Response *parse_http_response(const char *response);
 
 
 
-
+int check_status_code(int status_code);
 #endif
