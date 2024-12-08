@@ -21,7 +21,7 @@ bool    start_with(char *url, char *reference) {
     return 1;
 }
 
-t_URL   *parse_url(char *url, bool flag) {
+t_URL   *parse_url(char *url) {
 
     t_URL *parsed_url;
 
@@ -86,9 +86,6 @@ t_URL   *parse_url(char *url, bool flag) {
     */
 
     if (start_with(url, "www")) { // Host
-        if (flag) {
-            url += 4; 
-        }   
         len_host = (strlen(url) - len_pos) + 1;
         parsed_url->host = (char *)malloc((len_host * sizeof(char)) + 1);
 
@@ -119,32 +116,32 @@ t_URL   *parse_url(char *url, bool flag) {
 }
 
 
-// void    parse_html(const char *response) {
+void    parse_html(const char *body) {
 
-//     const char *img_tag = "<img ";
-//     const char *src_attribute = "src=\"";
+    const char *img_tag = "<img ";
+    const char *src_attribute = "src=\"";
 
-//     char* pos = response;
+    char* pos = body;
 
-//     while ((pos = strstr(pos, img_tag)) != NULL) {
+    while ((pos = strstr(pos, img_tag)) != NULL) {
 
-//         char* src_start = strstr(pos, src_attribute);
-//         if (src_start) {
-//             src_start += strlen(src_attribute); // pass src="
-//             char* src_end = strchr(src_start, '"');
+        char* src_start = strstr(pos, src_attribute);
+        if (src_start) {
+            src_start += strlen(src_attribute); // pass src="
+            char* src_end = strchr(src_start, '"');
 
-//             if (src_end) {
-//                 size_t len = (size_t)(src_end - src_start);
-//                 char *img_path = malloc((len * sizeof(char)) + 1);
-//                 memcpy(img_path, src_start, len);
-//                 img_path += '\0';
-//                 printf("Image: %s\n", img_path);
-//                 free(img_path);
-//             }
-//         }
-//         pos++;
-//     }
-// }       
+            if (src_end) {
+                size_t len = (size_t)(src_end - src_start);
+                char *img_path = malloc((len * sizeof(char)) + 1);
+                memcpy(img_path, src_start, len);
+                img_path += '\0';
+                printf("Image: %s\n", img_path);
+                free(img_path);
+            }
+        }
+        pos++;
+    }
+}       
         
         
         
@@ -160,10 +157,8 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
     res_parsed->header = NULL;
     res_parsed->body = NULL;
     res_parsed->location = NULL;
-    res_parsed->is_chunked = 0;
-    res_parsed->content_len = -1; 
+    res_parsed->is_chunked = false;
     
-
 
     /* Header */
     const char *header_end = strstr(raw_response, "\r\n\r\n"); // The header ends with \r\n\r\n
@@ -175,23 +170,28 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
     res_parsed->header = strndup(raw_response, (size_t)(header_end - raw_response));
     /* end Header */
 
+
     /* Status Code */
-    const char *status_code_end = strstr(raw_response, "\r\n"); /* First line */
+    const char *status_code_end = strstr(res_parsed->header, "\r\n"); /* First line */
     
     if (!status_code_end) {
         printf("Error in parsing status code.\n");
         return NULL;
     }
-    char *status_line = strndup(raw_response, (status_code_end - raw_response));
+    char *status_line = strndup(res_parsed->header, (status_code_end - res_parsed->header));
     int status_code = 0;
 
     sscanf(status_line, "HTTP/%*s %d", &status_code);
     free(status_line);
-    check_status_code(status_code);
+    if (check_status_code(status_code) == -1) {
+        return NULL;
+    }
     /* End Status Code*/
     
+
+
     /* Location */
-    const char *location_start = strstr(raw_response, "Location: "); 
+    const char *location_start = strstr(res_parsed->header, "Location: "); 
     if (location_start) {
         location_start += 10;
         const char *location_end = strstr(location_start, "\r\n");
@@ -202,11 +202,34 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
     /* End Location */
 
 
+
+    /* Transfert Encoding Method */
+    const char  *encoding_type = strstr(res_parsed->header, "Transfer-Encoding: ");
+    if (!encoding_type) {
+        printf("Error in parsing Encoding type.\n");
+        return NULL;
+    }
+    encoding_type += 19;
+    if (strncmp(encoding_type, "chunked", 7) == 0) {
+        res_parsed->is_chunked = true;
+    } 
+    /* End */
+
+
+    /* Body */
+    const char *body_start = strstr(raw_response, "\r\n\r\n"); /* Where the Header ends */
+    if (!body_start) {
+        printf("Error in parsing Body.\n");
+        return NULL;     
+    }
+    body_start += 4;
+    res_parsed->body = strdup(body_start);
+    /* End */
+
+
+
     printf("Header: \n%s\n", res_parsed->header);
     
 
-
-    
-    free(res_parsed->header);
-    free(res_parsed);
+    return res_parsed;
 }

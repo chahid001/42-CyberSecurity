@@ -68,7 +68,7 @@ t_Opts   *ft_args(int argc, char **argv) {
         return NULL;
     }
 
-    opts->url = parse_url(url, true);
+    opts->url = parse_url(url);
     opts->path = path;
     if (level > 0) {
         opts->level = level;

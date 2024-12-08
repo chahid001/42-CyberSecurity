@@ -33,8 +33,7 @@ typedef struct s_HTTP_Response {
     int     status_code;
     char    *header;
     char    *body;
-    int     is_chunked;
-    long    content_len;
+    bool    is_chunked;
     char    *location;
 
 }   t_HTTP_Response;
@@ -59,7 +58,7 @@ typedef struct s_Socket {
 
 /* Parsing & Setting Options */
 t_Opts      *ft_args(int argc, char **argv);
-t_URL       *parse_url(char *url, bool flag);
+t_URL       *parse_url(char *url);
 
 char    send_request(const t_Socket *socket, const t_URL *url);
 /* Creating & Sending the Request */
@@ -67,7 +66,7 @@ char        *ft_network(const t_URL *url);
 int    create_socket(const char* host, const char *port);
 bool    set_blocking_mode(int fd, bool block);
 char    init_https(t_Socket *socket, const char *host);
-void        parse_html(const char *response);
+void        parse_html(const char *body);
 
 void        ft_SSL_init();
 void        ft_SSL_free(SSL *ssl, SSL_CTX *ctx);

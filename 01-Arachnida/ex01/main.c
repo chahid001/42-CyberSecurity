@@ -23,13 +23,26 @@ int main(int argc, char** argv) {
 
     parsed_response = parse_http_response(response);
 
-    if (parsed_response->location) {
+    if (!parsed_response) {
+        free(response);
+        free_them_all(opts);       
+    }
+
+    if (parsed_response->location != NULL) {
         free(response);
         free_them_all(opts);
-        opts->url = parse_url(parsed_response->location, false);
+        opts->url = parse_url(parsed_response->location);
         response = ft_network(opts->url);
+        free(parsed_response->location);
+        free(parsed_response->header);
         free(parsed_response);
         parsed_response = parse_http_response(response);
+    }
+
+    if (parsed_response->is_chunked == true) {
+        parse_html(parsed_response->body);
+    } else {
+
     }
 
     free(response);
