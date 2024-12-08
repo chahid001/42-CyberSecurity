@@ -220,8 +220,6 @@ char    send_request(const t_Socket *socket, const t_URL *url) {
     snprintf(request, sizeof(request), 
         "GET %s HTTP/1.1\r\n"
         "Host: %s \r\n"
-        "Content-Length: 0\r\n"
-        "Content-Type: application/x-www-form-urlencoded\r\n"
         "Accept: */*\r\n"
         "User-Agent: curl/8.4.0\r\n"
         "Connection: close\r\n"

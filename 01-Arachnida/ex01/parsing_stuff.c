@@ -134,7 +134,7 @@ void    parse_html(const char *body) {
                 size_t len = (size_t)(src_end - src_start);
                 char *img_path = malloc((len * sizeof(char)) + 1);
                 memcpy(img_path, src_start, len);
-                img_path += '\0';
+                img_path[len] = '\0';
                 printf("Image: %s\n", img_path);
                 free(img_path);
             }
@@ -168,6 +168,7 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
         return NULL;
     }
     res_parsed->header = strndup(raw_response, (size_t)(header_end - raw_response));
+    printf("%s", res_parsed->header);
     /* end Header */
 
 
@@ -201,7 +202,7 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
     }
     /* End Location */
 
-
+    /* */
 
     /* Transfert Encoding Method */
     const char  *encoding_type = strstr(res_parsed->header, "Transfer-Encoding: ");
@@ -232,4 +233,44 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
     
 
     return res_parsed;
+}
+
+char    *decode_body(char *encoded_body) {
+
+    char    *body = malloc(PAGE_SIZE * sizeof(char));
+
+    if (!body) {
+        perror("Malloc: Failed allocating Chunked body");
+        // return NULL;
+    }
+
+    size_t      total_size = 0;
+    
+    while (1) {
+        char        *chunk_end;
+        long int     chunk_size = strtol(encoded_body, &chunk_end, 16);
+
+        if (chunk_size == 0) {
+            break; /* End of the body -> size 0 */
+        }
+
+        encoded_body = chunk_end + 2; /* Skip the size + \r\n */
+
+        char    *new_body = realloc(body, total_size + chunk_size + 1);
+        if (!new_body) {
+            free(body);
+            perror("Malloc");
+            // return  NULL;
+        }
+
+        body = new_body;
+        memcpy(body + total_size, encoded_body, chunk_size);
+        total_size += chunk_size;
+        encoded_body += chunk_size + 2; 
+
+    }
+
+    body[total_size] = '\0';
+
+    return body;
 }

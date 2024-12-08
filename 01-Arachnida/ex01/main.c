@@ -20,12 +20,12 @@ int main(int argc, char** argv) {
         free(opts);
         exit(EXIT_FAILURE);
     } 
-
     parsed_response = parse_http_response(response);
 
     if (!parsed_response) {
         free(response);
-        free_them_all(opts);       
+        free_them_all(opts);
+        exit(EXIT_FAILURE);      
     }
 
     if (parsed_response->location != NULL) {
@@ -40,9 +40,12 @@ int main(int argc, char** argv) {
     }
 
     if (parsed_response->is_chunked == true) {
-        parse_html(parsed_response->body);
+        char *body = decode_body(parsed_response->body);
+        printf("%s", body);
+        parse_html(body);
+        free(body);
     } else {
-
+        parse_html(parsed_response->body);
     }
 
     free(response);

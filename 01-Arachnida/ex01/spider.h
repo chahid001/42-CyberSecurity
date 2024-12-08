@@ -77,7 +77,7 @@ bool        start_with(char *url, char *reference);
 
 t_HTTP_Response *parse_http_response(const char *response);
 
-
+char*    decode_body(char *encoded_body);
 
 int check_status_code(int status_code);
 #endif
