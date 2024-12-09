@@ -143,21 +143,14 @@ void    parse_html(const char *body) {
     }
 }       
         
-        
-        
-t_HTTP_Response *parse_http_response(const char *raw_response) {
+t_Response *parse_http_response(const char *raw_response) {
 
-    t_HTTP_Response *res_parsed = (t_HTTP_Response *)malloc(sizeof(t_HTTP_Response));
+    t_Response *res_parsed = (t_Response *)malloc(sizeof(t_Response));
 
     if (!res_parsed) {
         perror("Malloc: Failed to allocate res_parsed.\n");
         return NULL;
     }
-
-    res_parsed->header = NULL;
-    res_parsed->body = NULL;
-    res_parsed->location = NULL;
-    res_parsed->is_chunked = false;
     
 
     /* Header */
@@ -196,15 +189,41 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
     if (location_start) {
         location_start += 10;
         const char *location_end = strstr(location_start, "\r\n");
-        res_parsed->location = strndup(location_start, (size_t)(location_end - location_start));
-        printf("New target: %s\n", res_parsed->location);
+        res_parsed->type = RESPONSE_TYPE_REDIRECTION;
+        res_parsed->Content.redirection_data.location = strndup(location_start, (size_t)(location_end - location_start));
+        printf("New target: %s\n", res_parsed->Content.redirection_data.location);
         return res_parsed; /* Get back to redo everything */
     }
     /* End Location */
 
-    /* */
+    /* Content Type */
+    const char *content_type = open_mind_strstr(res_parsed->header, "Content-Type: ");
+    if (!content_type) {
+        printf("Error in parsing Content type.\n");
+        return NULL;
+    }
+    content_type += 14;
+    if (strncmp(content_type, "image", 5) == 0) {
+        
+        /* Check Image Type */
+        content_type += 6;
+        const char *type_end = strstr(content_type, "\r\n");
+        char *img_type = strndup(content_type, (size_t)(type_end - content_type));
+        if (check_type_img(img_type)) {
+            res_parsed->type = RESPONSE_TYPE_IMAGE;
+            res_parsed->Content.image_data.img_type = img_type;
+            return res_parsed;
+        } else {
+            perror("Image type not supported.");
+            return NULL;
+        }
+        /* End */
 
-    /* Transfert Encoding Method */
+
+    }
+    /* End */
+
+    // /* Transfert Encoding Method */
     const char  *encoding_type = strstr(res_parsed->header, "Transfer-Encoding: ");
     if (!encoding_type) {
         printf("Error in parsing Encoding type.\n");
@@ -212,28 +231,28 @@ t_HTTP_Response *parse_http_response(const char *raw_response) {
     }
     encoding_type += 19;
     if (strncmp(encoding_type, "chunked", 7) == 0) {
-        res_parsed->is_chunked = true;
+        res_parsed->type = RESPONSE_TYPE_GENERIC;
+        res_parsed->Content.generic_data.is_chunked = true;
     } 
     /* End */
 
 
     /* Body */
-    const char *body_start = strstr(raw_response, "\r\n\r\n"); /* Where the Header ends */
+    const unsigned char *body_start = strstr(raw_response, "\r\n\r\n"); /* Where the Header ends */
     if (!body_start) {
         printf("Error in parsing Body.\n");
         return NULL;     
     }
     body_start += 4;
-    res_parsed->body = strdup(body_start);
+    res_parsed->type = RESPONSE_TYPE_GENERIC;
+    res_parsed->Content.generic_data.body = strdup(body_start);
+    // printf("\n\n\n\n%01x\n\n\n\n", res_parsed->body);
+    // free(response);
     /* End */
-
-
-
-    printf("Header: \n%s\n", res_parsed->header);
-    
 
     return res_parsed;
 }
+
 
 char    *decode_body(char *encoded_body) {
 

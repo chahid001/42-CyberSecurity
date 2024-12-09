@@ -9,7 +9,7 @@
 
 
 /*
-    Set blocking mode 
+    Set blocking mode
     | 0 -> non-blocking
     | 1 -> blocking 
 */
@@ -33,7 +33,7 @@ bool    set_blocking_mode(int fd, bool block) {
     if (fcntl(fd, F_SETFL, flags) == 0) {
         return true;
     } else {
-        perror("Failed to set file descriptor flags");
+        perror("Failed to set file descriptor flags.");
         return false;
     }
 }
@@ -220,8 +220,9 @@ char    send_request(const t_Socket *socket, const t_URL *url) {
     snprintf(request, sizeof(request), 
         "GET %s HTTP/1.1\r\n"
         "Host: %s \r\n"
+        "Content-Type: application/x-www-form-urlencoded\r\n"
         "Accept: */*\r\n"
-        "User-Agent: curl/8.4.0\r\n"
+        "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36\r\n"
         "Connection: close\r\n"
         "Accept-Encoding: identity\r\n\r\n"
         "\r\n", url->uri, url->host);
@@ -241,7 +242,7 @@ char    send_request(const t_Socket *socket, const t_URL *url) {
 }
 
 
-char    *ft_network(const t_URL *url) { // url obj, uri, host, Socket obj, 
+t_Socket    *ft_network(const t_URL *url) { // url obj, uri, host, Socket obj, 
 
     t_Socket    *socket;
     char        *raw_response;
@@ -289,20 +290,60 @@ char    *ft_network(const t_URL *url) { // url obj, uri, host, Socket obj,
         free(socket);
         return (NULL);
     }
+    
+    // raw_response = get_response(socket, url->port);
+    
+    // if (!raw_response) {
+    //     close(socket->fd);
+    //     free(socket);
+    //     return NULL;
+    // }
 
-    raw_response = get_response(socket, url->port);
-
-    if (!raw_response) {
-        close(socket->fd);
-        free(socket);
-        return NULL;
-    }
-
-    SSL_shutdown(socket->ssl);
-    ft_SSL_free(socket->ssl, socket->ctx);
-    close(socket->fd);
-    free(socket);
+    // SSL_shutdown(socket->ssl);
+    // ft_SSL_free(socket->ssl, socket->ctx);
+    // close(socket->fd);
+    // free(socket);
 
     
-    return raw_response;
+    return socket;
+}
+
+void    download_stuff(t_URL *image_url, char *image_ext, int i) {
+    
+    t_Socket *socket = ft_network(image_url);
+
+    char buffer[4096];
+    int bytes_read;
+    int header_received = 0;
+
+    char *image_name = malloc((9 + strlen(image_ext)) * sizeof(char));
+
+    if (!image_name) {
+        fprintf(stderr, "Malloc: Failed allocating image name.\n");
+        free_them_all(NULL, socket, NULL, NULL, NULL);
+        exit(EXIT_FAILURE);
+    }
+
+    snprintf(image_name, (9 + strlen(image_ext)), "image-%d.%s", i++, image_ext);
+
+    FILE *file = fopen(image_name, "wb");
+    if (!file) {
+        exit(EXIT_FAILURE);
+    }
+
+    while ((bytes_read = SSL_read(socket->ssl, buffer, sizeof(buffer))) > 0) {
+        if (!header_received) {
+            char *header_end = strstr(buffer, "\r\n\r\n");
+            if (header_end) {
+                header_received = 1;
+                header_end += 4; // Skip past the header
+                fwrite(header_end, 1, bytes_read - (header_end - buffer), file);
+            }
+        } else {
+            
+            fwrite(buffer, 1, bytes_read, file);
+        }
+    }
+    free(image_name);
+    free_them_all(NULL, socket, NULL, NULL, NULL);
 }

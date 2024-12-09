@@ -1,56 +1,96 @@
 #include "spider.h"
 
-static free_them_all(t_Opts *opts) {
-    
-    free(opts->url->uri);
-    free(opts->url->host);
-    free(opts->url);
-}
-
 int main(int argc, char** argv) {
 
-    char *response;
-    t_Opts *opts = ft_args(argc, argv);
-    t_HTTP_Response *parsed_response;
+    char        *raw_response       = NULL;
+    t_Socket    *socket             = NULL;
+    t_Response  *parsed_response    = NULL;
+    t_Opts      *opts               = ft_args(argc, argv);
 
-    response = ft_network(opts->url);
+    int         redirection_count   = 0;
+    int         max_redirection     = 2;
 
-    if (!response) {
-        free_them_all(opts);
-        free(opts);
-        exit(EXIT_FAILURE);
-    } 
-    parsed_response = parse_http_response(response);
 
-    if (!parsed_response) {
-        free(response);
-        free_them_all(opts);
-        exit(EXIT_FAILURE);      
+    while (redirection_count < max_redirection) {
+
+        /* Connect to target */
+        socket = ft_network(opts->url);
+
+        /* Get Response */
+        raw_response = get_response(socket, opts->url->port);
+        if (!raw_response) {
+            free_them_all(opts, NULL, NULL, NULL, NULL);
+            exit(EXIT_FAILURE);
+        }
+
+        /* Parse Response */
+        parsed_response = parse_http_response(raw_response);
+
+        if (!parsed_response) {
+        
+            free_them_all(opts, NULL, NULL, raw_response, NULL);
+            exit(EXIT_FAILURE);      
+        
+        } else if (parsed_response->type == RESPONSE_TYPE_REDIRECTION) {
+
+            free_them_all(NULL, socket, NULL, raw_response, false);
+            opts->url = parse_url(parsed_response->Content.redirection_data.location);
+            free_them_all(NULL, NULL, parsed_response, NULL, NULL);
+            redirection_count++;
+            continue;
+        
+        } else if (parsed_response->type == RESPONSE_TYPE_GENERIC) {
+
+            if (parsed_response->Content.generic_data.is_chunked) {
+                
+                decode_body(parsed_response->Content.generic_data.body);
+
+            }
+
+            parse_html(parsed_response->Content.generic_data.body); // return list of images links
+            // download images function take ssl and ext of image
+        } else if (parsed_response->type == RESPONSE_TYPE_IMAGE) {
+            
+            download_stuff(opts->url, parsed_response->Content.image_data.img_type, 1);
+            free_them_all(opts, socket, NULL, raw_response, true);
+            system("leaks spider");
+            break;
+            //free
+            // list has one image link which is opts->url
+            // extention is from parsed_response->Content.image_data.img_type
+
+        }
     }
-
-    if (parsed_response->location != NULL) {
-        free(response);
-        free_them_all(opts);
-        opts->url = parse_url(parsed_response->location);
-        response = ft_network(opts->url);
-        free(parsed_response->location);
-        free(parsed_response->header);
-        free(parsed_response);
-        parsed_response = parse_http_response(response);
-    }
-
-    if (parsed_response->is_chunked == true) {
-        char *body = decode_body(parsed_response->body);
-        printf("%s", body);
-        parse_html(body);
-        free(body);
-    } else {
-        parse_html(parsed_response->body);
-    }
-
-    free(response);
-    free_them_all(opts);
-    free(opts);
-
-    system("leaks spider");
 }
+
+
+
+
+
+
+    // if (parsed_response->location != NULL) {
+    //     opts->url = parse_url(parsed_response->location);
+    //     raw_response = ft_network(opts->url);
+    //     free(parsed_response->location);
+    //     free(parsed_response->header);
+    //     free(parsed_response);
+    //     parsed_response = parse_http_response(raw_response);
+    // }
+
+//     if (parsed_response->is_chunked == true) {
+//         char *body = decode_body(parsed_response->body);
+//         printf("%s", body);
+//         parse_html(body);
+//         free(body);
+//     } else if (parsed_response->is_image == true) {
+//         printf("Its an image.");
+//     } else {
+//         parse_html(parsed_response->body);
+//     }
+
+//     free(raw_response);
+//     free_them_all(opts);
+//     free(opts);
+
+//     system("leaks spider");
+// }
