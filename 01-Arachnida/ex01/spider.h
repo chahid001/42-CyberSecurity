@@ -108,7 +108,7 @@ bool        start_with(char *url, char *reference);
 
 t_Response *parse_http_response(const char *response);
 
-char*    decode_body(char *encoded_body);
+void    decode_body(char *encoded_body);
 char* open_mind_strstr(const char* haystack, const char* needle);
 bool    check_type_img(char *type);
 int check_status_code(int status_code);

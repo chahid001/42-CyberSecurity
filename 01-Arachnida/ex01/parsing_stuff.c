@@ -161,7 +161,6 @@ t_Response *parse_http_response(const char *raw_response) {
         return NULL;
     }
     res_parsed->header = strndup(raw_response, (size_t)(header_end - raw_response));
-    printf("%s", res_parsed->header);
     /* end Header */
 
 
@@ -178,6 +177,7 @@ t_Response *parse_http_response(const char *raw_response) {
     sscanf(status_line, "HTTP/%*s %d", &status_code);
     free(status_line);
     if (check_status_code(status_code) == -1) {
+        printf("Status code: %d --- KO\n", status_code);
         return NULL;
     }
     /* End Status Code*/
@@ -186,15 +186,22 @@ t_Response *parse_http_response(const char *raw_response) {
 
     /* Location */
     const char *location_start = strstr(res_parsed->header, "Location: "); 
-    if (location_start) {
-        location_start += 10;
-        const char *location_end = strstr(location_start, "\r\n");
-        res_parsed->type = RESPONSE_TYPE_REDIRECTION;
-        res_parsed->Content.redirection_data.location = strndup(location_start, (size_t)(location_end - location_start));
-        printf("New target: %s\n", res_parsed->Content.redirection_data.location);
-        return res_parsed; /* Get back to redo everything */
+    if (check_status_code(status_code) == 1) {
+        printf("Status code: %d --- Redirection\n", status_code);
+        if (location_start) {
+            location_start += 10;
+            const char *location_end = strstr(location_start, "\r\n");
+            res_parsed->type = RESPONSE_TYPE_REDIRECTION;
+            res_parsed->Content.redirection_data.location = strndup(location_start, (size_t)(location_end - location_start));
+            printf("New target: %s\n", res_parsed->Content.redirection_data.location);
+            return res_parsed; /* Get back to redo everything */
+        }
+        printf("No location tag was found.\n");
+        return NULL;
     }
     /* End Location */
+
+    printf("Status code: %d --- OK\n", status_code); /* Only case left */
 
     /* Content Type */
     const char *content_type = open_mind_strstr(res_parsed->header, "Content-Type: ");
@@ -254,20 +261,19 @@ t_Response *parse_http_response(const char *raw_response) {
 }
 
 
-char    *decode_body(char *encoded_body) {
-
-    char    *body = malloc(PAGE_SIZE * sizeof(char));
-
-    if (!body) {
+void decode_body(char *body) {
+    char *encoded_body = body; 
+    char *temp_body = malloc(PAGE_SIZE * sizeof(char)); /* Temporary buffer for decoded body */
+    if (!temp_body) {
         perror("Malloc: Failed allocating Chunked body");
-        // return NULL;
+        return;
     }
 
-    size_t      total_size = 0;
-    
+    size_t total_size = 0;
+
     while (1) {
-        char        *chunk_end;
-        long int     chunk_size = strtol(encoded_body, &chunk_end, 16);
+        char *chunk_end;
+        long int chunk_size = strtol(encoded_body, &chunk_end, 16);
 
         if (chunk_size == 0) {
             break; /* End of the body -> size 0 */
@@ -275,21 +281,21 @@ char    *decode_body(char *encoded_body) {
 
         encoded_body = chunk_end + 2; /* Skip the size + \r\n */
 
-        char    *new_body = realloc(body, total_size + chunk_size + 1);
-        if (!new_body) {
-            free(body);
-            perror("Malloc");
-            // return  NULL;
+        char *new_temp_body = realloc(temp_body, total_size + chunk_size + 1);
+        if (!new_temp_body) {
+            free(temp_body);
+            perror("Realloc: Failed reallocating Chunked body");
+            return;
         }
 
-        body = new_body;
-        memcpy(body + total_size, encoded_body, chunk_size);
+        temp_body = new_temp_body;
+        memcpy(temp_body + total_size, encoded_body, chunk_size);
         total_size += chunk_size;
-        encoded_body += chunk_size + 2; 
-
+        encoded_body += chunk_size + 2; /* Skip the chunk + \r\n */
     }
 
-    body[total_size] = '\0';
+    temp_body[total_size] = '\0'; 
 
-    return body;
+    memcpy(body, temp_body, total_size + 1); 
+    free(temp_body); 
 }

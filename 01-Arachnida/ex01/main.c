@@ -42,13 +42,14 @@ int main(int argc, char** argv) {
         } else if (parsed_response->type == RESPONSE_TYPE_GENERIC) {
 
             if (parsed_response->Content.generic_data.is_chunked) {
-                
+                /* Decode Chunked body */
                 decode_body(parsed_response->Content.generic_data.body);
-
             }
 
-            parse_html(parsed_response->Content.generic_data.body); // return list of images links
+            parse_html(parsed_response->Content.generic_data.body);
+            break;
             // download images function take ssl and ext of image
+
         } else if (parsed_response->type == RESPONSE_TYPE_IMAGE) {
             
             download_stuff(opts->url, parsed_response->Content.image_data.img_type, 1);
