@@ -8,10 +8,10 @@ int main(int argc, char** argv) {
     t_Opts      *opts               = ft_args(argc, argv);
 
     int         redirection_count   = 0;
-    int         max_redirection     = 2;
+    int         max_redirections    = 2;
 
 
-    while (redirection_count < max_redirection) {
+    while (redirection_count < max_redirections) {
 
         /* Connect to target */
         socket = ft_network(opts->url);
@@ -61,6 +61,12 @@ int main(int argc, char** argv) {
             // extention is from parsed_response->Content.image_data.img_type
 
         }
+    }
+
+    if (redirection_count >= max_redirections) {
+        fprintf(stderr, "Too many redirects.\n");
+        free_them_all(opts, NULL, NULL, NULL, true);
+        exit(EXIT_FAILURE);
     }
 }
 
