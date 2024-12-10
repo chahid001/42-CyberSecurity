@@ -60,11 +60,13 @@ int main(int argc, char** argv) {
 
         } else if (parsed_response->type == RESPONSE_TYPE_IMAGE) {
             
-            if (imgs && j < 3) {
+            if (imgs[i] && j < opts->level) {
+
                 if (!parsed_response->Content.image_data.img_type) {
                     if (flag) {
                         free_them_all(opts, socket, parsed_response, raw_response, false);
                         opts->url = parse_url(imgs[i++]);
+                        printf("\n\n\n\n %d \n\n\n\n", i);
                         continue;
                     } else {
                         free_them_all(opts, socket, parsed_response, raw_response, true);
@@ -78,11 +80,15 @@ int main(int argc, char** argv) {
                 j++;
                 continue;
             } else {
+                if (j < opts->level) {
+                    printf("Available images is smaller than the default Level.\n");
+                    exit(EXIT_SUCCESS);
+                }
                 break;
             }
         }
     }
-
+    
     if (redirection_count >= max_redirections) {
         fprintf(stderr, "Too many redirects.\n");
         free_them_all(opts, NULL, NULL, NULL, true);
@@ -91,33 +97,3 @@ int main(int argc, char** argv) {
 }
 
 
-
-
-
-
-    // if (parsed_response->location != NULL) {
-    //     opts->url = parse_url(parsed_response->location);
-    //     raw_response = ft_network(opts->url);
-    //     free(parsed_response->location);
-    //     free(parsed_response->header);
-    //     free(parsed_response);
-    //     parsed_response = parse_http_response(raw_response);
-    // }
-
-//     if (parsed_response->is_chunked == true) {
-//         char *body = decode_body(parsed_response->body);
-//         printf("%s", body);
-//         parse_html(body);
-//         free(body);
-//     } else if (parsed_response->is_image == true) {
-//         printf("Its an image.");
-//     } else {
-//         parse_html(parsed_response->body);
-//     }
-
-//     free(raw_response);
-//     free_them_all(opts);
-//     free(opts);
-
-//     system("leaks spider");
-// }

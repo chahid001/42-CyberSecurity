@@ -151,7 +151,6 @@ char    **parse_html(const char *body) {
         }
         pos++;
     }
-
     return image_links;
 }       
         
