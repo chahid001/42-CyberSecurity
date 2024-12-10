@@ -97,7 +97,7 @@ t_Socket    *ft_network(const t_URL *url);
 int    create_socket(const char* host, const char *port);
 bool    set_blocking_mode(int fd, bool block);
 char    init_https(t_Socket *socket, const char *host);
-void        parse_html(const char *body);
+char**        parse_html(const char *body);
 
 void        ft_SSL_init();
 void        ft_SSL_free(SSL *ssl, SSL_CTX *ctx);
@@ -106,7 +106,7 @@ char    *get_response(const t_Socket *socket, const char* port);
 int read_socket(const t_Socket *socket, char *buffer, const size_t size, const char *port);
 bool        start_with(char *url, char *reference);
 
-t_Response *parse_http_response(const char *response);
+t_Response *parse_http_response(const char *raw_response);
 
 void    decode_body(char *encoded_body);
 char* open_mind_strstr(const char* haystack, const char* needle);

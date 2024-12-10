@@ -116,12 +116,15 @@ t_URL   *parse_url(char *url) {
 }
 
 
-void    parse_html(const char *body) {
+char    **parse_html(const char *body) {
 
     const char *img_tag = "<img ";
     const char *src_attribute = "src=\"";
 
     char* pos = body;
+
+    char **image_links = NULL;
+    size_t  i = 0;
 
     while ((pos = strstr(pos, img_tag)) != NULL) {
 
@@ -135,12 +138,21 @@ void    parse_html(const char *body) {
                 char *img_path = malloc((len * sizeof(char)) + 1);
                 memcpy(img_path, src_start, len);
                 img_path[len] = '\0';
-                printf("Image: %s\n", img_path);
-                free(img_path);
+                
+                char **temp = realloc(image_links, (i + 1) * sizeof(char *));
+                if (!temp) {
+                    fprintf(stderr, "Memory reallocation failed\n");
+                    free(img_path);
+                    break;
+                }
+                image_links = temp;
+                image_links[i++] = img_path;
             }
         }
         pos++;
     }
+
+    return image_links;
 }       
         
 t_Response *parse_http_response(const char *raw_response) {
@@ -220,13 +232,12 @@ t_Response *parse_http_response(const char *raw_response) {
             res_parsed->type = RESPONSE_TYPE_IMAGE;
             res_parsed->Content.image_data.img_type = img_type;
             return res_parsed;
-        } else {
-            perror("Image type not supported.");
-            return NULL;
+        } else if (!check_type_img(img_type)) {
+            res_parsed->type = RESPONSE_TYPE_IMAGE;
+            res_parsed->Content.image_data.img_type = NULL;
+            return res_parsed;
         }
         /* End */
-
-
     }
     /* End */
 

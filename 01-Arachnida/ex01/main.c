@@ -6,11 +6,13 @@ int main(int argc, char** argv) {
     t_Socket    *socket             = NULL;
     t_Response  *parsed_response    = NULL;
     t_Opts      *opts               = ft_args(argc, argv);
-
+    char        **imgs              = NULL;
     int         redirection_count   = 0;
     int         max_redirections    = 2;
 
-
+    int  i                   = 0;
+    int j = 0;
+    bool                        flag = false;
     while (redirection_count < max_redirections) {
 
         /* Connect to target */
@@ -45,21 +47,39 @@ int main(int argc, char** argv) {
                 /* Decode Chunked body */
                 decode_body(parsed_response->Content.generic_data.body);
             }
+            
 
-            parse_html(parsed_response->Content.generic_data.body);
-            break;
-            // download images function take ssl and ext of image
+
+            imgs = parse_html(parsed_response->Content.generic_data.body);
+            flag = true;
+            if (imgs) {
+                free_them_all(NULL, socket, parsed_response, raw_response, false);
+                opts->url = parse_url(imgs[i]);
+                continue;
+            }  
 
         } else if (parsed_response->type == RESPONSE_TYPE_IMAGE) {
             
-            download_stuff(opts->url, parsed_response->Content.image_data.img_type, 1);
-            free_them_all(opts, socket, NULL, raw_response, true);
-            system("leaks spider");
-            break;
-            //free
-            // list has one image link which is opts->url
-            // extention is from parsed_response->Content.image_data.img_type
-
+            if (imgs && j < 3) {
+                if (!parsed_response->Content.image_data.img_type) {
+                    if (flag) {
+                        free_them_all(opts, socket, parsed_response, raw_response, false);
+                        opts->url = parse_url(imgs[i++]);
+                        continue;
+                    } else {
+                        free_them_all(opts, socket, parsed_response, raw_response, true);
+                        fprintf(stderr, "File Type not supported.\n");
+                        exit(EXIT_FAILURE);
+                    } 
+                }
+                download_stuff(opts->url, parsed_response->Content.image_data.img_type, j+1);
+                free_them_all(opts, socket, parsed_response, raw_response, false);
+                opts->url = parse_url(imgs[i++]);
+                j++;
+                continue;
+            } else {
+                break;
+            }
         }
     }
 

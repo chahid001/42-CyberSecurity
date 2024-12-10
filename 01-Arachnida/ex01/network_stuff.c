@@ -311,7 +311,7 @@ t_Socket    *ft_network(const t_URL *url) { // url obj, uri, host, Socket obj,
 void    download_stuff(t_URL *image_url, char *image_ext, int i) {
     
     t_Socket *socket = ft_network(image_url);
-
+    
     char buffer[4096];
     int bytes_read;
     int header_received = 0;
