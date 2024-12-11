@@ -21,6 +21,8 @@ bool    start_with(char *url, char *reference) {
     return 1;
 }
 
+
+
 t_URL   *parse_url(char *url) {
 
     t_URL *parsed_url;

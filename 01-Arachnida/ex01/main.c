@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
             if (imgs && imgs[i] && j < opts->level) {
                 if (!parsed_response->Content.image_data.img_type) {
                     free_them_all(opts, socket, parsed_response, raw_response, false);
-                    opts->url = parse_url(imgs[i++]);
+                    opts->url = parse_url(imgs[++i]);
                     continue;
                 }
                 download_stuff(opts->url, parsed_response->Content.image_data.img_type, j+1);
