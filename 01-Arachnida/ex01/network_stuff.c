@@ -191,7 +191,7 @@ char    *get_response(const t_Socket *socket, const char* port) {
     while ((bytes_received = read_socket(socket, buffer, PAGE_SIZE, port)) > 0) {
         buffer[bytes_received] = '\0';  
         
-        char *new_res = realloc(response, total_size + bytes_received);
+        char *new_res = realloc(response, total_size + bytes_received + 1);
         
         if (!new_res) {
             perror("Realloc Failed.\n");
@@ -201,14 +201,14 @@ char    *get_response(const t_Socket *socket, const char* port) {
         response = new_res;
         memcpy(response + total_size, buffer, bytes_received);
         total_size += bytes_received;
-        response[total_size] = '\0';
     }
 
     if (bytes_received == -1) {
         perror("Failed to pass response.\n");
         free(response);
         return NULL;
-    }
+    } /* Why i choosed to work with C ???!!!*/
+    response[total_size] = '\0';
     return response;
 }
 

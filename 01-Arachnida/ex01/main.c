@@ -1,5 +1,16 @@
 #include "spider.h"
 
+void free_imgs(char **imgs) {
+    if (imgs) {
+        // Free each string in the imgs array
+        for (int i = 0; imgs[i] != NULL; i++) {
+            free(imgs[i]);  // Free each string
+        }
+        // Free the array itself
+        free(imgs);
+    }
+}
+
 int main(int argc, char** argv) {
 
     char        *raw_response       = NULL;
@@ -36,7 +47,7 @@ int main(int argc, char** argv) {
         
         if (parsed_response->type == RESPONSE_TYPE_REDIRECTION) {
 
-            free_them_all(NULL, socket, NULL, raw_response, false);
+            free_them_all(opts, socket, NULL, raw_response, false);
             opts->url = parse_url(parsed_response->Content.redirection_data.location);
             free_them_all(NULL, NULL, parsed_response, NULL, NULL);
             redirection_count++;
@@ -53,14 +64,14 @@ int main(int argc, char** argv) {
             flag = true;
             
             if (imgs) {
-                free_them_all(NULL, socket, parsed_response, raw_response, false);
+                free_them_all(opts, socket, parsed_response, raw_response, false);
                 opts->url = parse_url(imgs[i]);
                 continue;
             }  
 
         } else if (parsed_response->type == RESPONSE_TYPE_IMAGE) {
             
-            if (imgs[i] && j < opts->level) {
+            if (imgs && imgs[i] && j < opts->level) {
                 if (!parsed_response->Content.image_data.img_type) {
                     free_them_all(opts, socket, parsed_response, raw_response, false);
                     opts->url = parse_url(imgs[i++]);
@@ -74,7 +85,10 @@ int main(int argc, char** argv) {
             } else {
                 if (j < opts->level) {
                     printf("Available images is smaller than the default Level.\n");
+                    free_them_all(opts, socket, parsed_response, raw_response, true);
+                    free_imgs(imgs);
                     system("leaks spider");
+                    
                     exit(EXIT_SUCCESS);
                 }
                 break;
@@ -83,7 +97,6 @@ int main(int argc, char** argv) {
         } 
         
     }
-    
     if (redirection_count >= max_redirections) {
         fprintf(stderr, "Too many redirects.\n");
         free_them_all(opts, NULL, NULL, NULL, true);

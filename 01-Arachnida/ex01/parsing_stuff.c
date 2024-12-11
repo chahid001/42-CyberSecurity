@@ -115,7 +115,6 @@ t_URL   *parse_url(char *url) {
     return parsed_url;
 }
 
-
 char    **parse_html(const char *body) {
 
     const char *img_tag = "<img ";
@@ -153,6 +152,8 @@ char    **parse_html(const char *body) {
     }
     return image_links;
 }       
+
+      
         
 t_Response *parse_http_response(const char *raw_response, bool flag) {
 
@@ -241,6 +242,7 @@ t_Response *parse_http_response(const char *raw_response, bool flag) {
         } else if (!check_type_img(img_type)) {
             res_parsed->type = RESPONSE_TYPE_IMAGE;
             res_parsed->Content.image_data.img_type = NULL;
+            free(img_type);
             return res_parsed;
         }
         /* End */
