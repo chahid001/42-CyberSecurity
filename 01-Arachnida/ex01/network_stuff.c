@@ -291,27 +291,13 @@ t_Socket    *ft_network(const t_URL *url) { // url obj, uri, host, Socket obj,
         return (NULL);
     }
     
-    // raw_response = get_response(socket, url->port);
-    
-    // if (!raw_response) {
-    //     close(socket->fd);
-    //     free(socket);
-    //     return NULL;
-    // }
-
-    // SSL_shutdown(socket->ssl);
-    // ft_SSL_free(socket->ssl, socket->ctx);
-    // close(socket->fd);
-    // free(socket);
-
-    
     return socket;
 }
 
 void    download_stuff(t_URL *image_url, char *image_ext, int i) {
     
     t_Socket *socket = ft_network(image_url);
-    
+
     char buffer[4096];
     int bytes_read;
     int header_received = 0;

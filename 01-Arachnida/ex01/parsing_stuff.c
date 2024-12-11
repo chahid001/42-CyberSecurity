@@ -154,7 +154,7 @@ char    **parse_html(const char *body) {
     return image_links;
 }       
         
-t_Response *parse_http_response(const char *raw_response) {
+t_Response *parse_http_response(const char *raw_response, bool flag) {
 
     t_Response *res_parsed = (t_Response *)malloc(sizeof(t_Response));
 
@@ -189,6 +189,8 @@ t_Response *parse_http_response(const char *raw_response) {
     free(status_line);
     if (check_status_code(status_code) == -1) {
         printf("Status code: %d --- KO\n", status_code);
+        free(res_parsed->header);
+        free(res_parsed);
         return NULL;
     }
     /* End Status Code*/
@@ -222,7 +224,12 @@ t_Response *parse_http_response(const char *raw_response) {
     }
     content_type += 14;
     if (strncmp(content_type, "image", 5) == 0) {
-        
+        if (!flag) {
+            free(res_parsed->header);
+            free(res_parsed);
+            fprintf(stderr, "Image Links are not supported.\n");
+            return NULL;
+        }
         /* Check Image Type */
         content_type += 6;
         const char *type_end = strstr(content_type, "\r\n");

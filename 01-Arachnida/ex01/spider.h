@@ -106,7 +106,7 @@ char    *get_response(const t_Socket *socket, const char* port);
 int read_socket(const t_Socket *socket, char *buffer, const size_t size, const char *port);
 bool        start_with(char *url, char *reference);
 
-t_Response *parse_http_response(const char *raw_response);
+t_Response *parse_http_response(const char *raw_response, bool flag);
 
 void    decode_body(char *encoded_body);
 char* open_mind_strstr(const char* haystack, const char* needle);

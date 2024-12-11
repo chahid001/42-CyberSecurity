@@ -5,8 +5,11 @@ void free_them_all(t_Opts *opts, t_Socket *socket, t_Response *parsed_response, 
     if (raw_response) free(raw_response);
 
     if (opts) {
-        if (opts->url->uri) free(opts->url->uri);
-        if (opts->url->host) free(opts->url->host);
+        if (opts->url) {
+            if (opts->url->uri) free(opts->url->uri);
+            if (opts->url->host) free(opts->url->host);
+            free(opts->url);
+        }        
         if (flag) free(opts);
     }
 
